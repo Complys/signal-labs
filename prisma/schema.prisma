@@ -28,6 +28,9 @@ model Product {
   // ✅ NEW: weight per unit in grams (for automatic postage cost)
   weightGrams Int?
 
+  // ✅ Product variants (JSON array of {label, pricePennies})
+  variantsJson String?
+
   orderItems     OrderItem[]
   deals          Deal[]
   stockInterests StockInterest[]

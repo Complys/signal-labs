@@ -303,6 +303,10 @@ export default async function AdminEditProductPage(props: {
               isActive: product.isActive,
               onSpecial: isOnSpecial,
               specialPrice: currentDeal ? penniesToPoundsString(currentDeal.specialPrice) : "",
+              variants: (() => {
+                try { return JSON.parse((product as any).variantsJson ?? "[]") || []; }
+                catch { return []; }
+              })(),
             }}
           />
 

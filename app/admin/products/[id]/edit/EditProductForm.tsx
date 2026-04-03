@@ -16,6 +16,7 @@ type Defaults = {
   stock: string;
   image: string;
   isActive: boolean;
+  variants: Array<{ label: string; pricePennies: number }>;
 
   // Weekly Specials / Deals
   onSpecial: boolean;
@@ -103,6 +104,17 @@ export default function EditProductForm({
   const [specialLive, setSpecialLive] = useState(defaults.specialPrice);
   const [onSpecialLive, setOnSpecialLive] = useState(defaults.onSpecial);
   const [percentLive, setPercentLive] = useState<string>("");
+  const [variants, setVariants] = useState<Array<{ label: string; pricePennies: number }>>(defaults.variants ?? []);
+
+  function addVariant() { setVariants((v) => [...v, { label: "", pricePennies: 0 }]); }
+  function removeVariant(i: number) { setVariants((v) => v.filter((_, idx) => idx !== i)); }
+  function updateVariant(i: number, field: "label" | "pricePennies", val: string) {
+    setVariants((v) => v.map((item, idx) =>
+      idx !== i ? item :
+      field === "label" ? { ...item, label: val } :
+      { ...item, pricePennies: Math.round(parseFloat(val.replace(/[^0-9.]/g,"")) * 100) || 0 }
+    ));
+  }
 
   const priceNum = useMemo(() => toNumberOrNaN(priceLive), [priceLive]);
   const costNum = useMemo(() => toNumberOrNaN(costLive), [costLive]);
@@ -432,6 +444,46 @@ export default function EditProductForm({
             </ul>
           </div>
         </div>
+      </div>
+
+      {/* Variants */}
+      <div className="rounded-2xl border border-white/10 bg-black/20 p-4">
+        <div className="text-sm text-white/80 font-semibold mb-1">Size variants</div>
+        <div className="text-xs text-white/50 mb-3">Add variants if this product comes in different sizes with different prices. Leave empty for a single-price product.</div>
+
+        <input type="hidden" name="variantsJson" value={JSON.stringify(variants)} />
+
+        <div className="space-y-2">
+          {variants.map((v, i) => (
+            <div key={i} className="flex items-center gap-2">
+              <input
+                type="text"
+                placeholder="Label e.g. 5mg"
+                value={v.label}
+                onChange={(e) => updateVariant(i, "label", e.target.value)}
+                className="flex-1 rounded-xl bg-black/30 border border-white/10 px-3 py-2 text-sm text-white outline-none focus:border-white/20 placeholder:text-white/30"
+              />
+              <input
+                type="number"
+                step="0.01"
+                min="0"
+                placeholder="Price £"
+                defaultValue={(v.pricePennies / 100).toFixed(2)}
+                onBlur={(e) => updateVariant(i, "pricePennies", e.target.value)}
+                className="w-28 rounded-xl bg-black/30 border border-white/10 px-3 py-2 text-sm text-white outline-none focus:border-white/20"
+              />
+              <button type="button" onClick={() => removeVariant(i)} className="text-red-400 hover:text-red-300 text-lg px-2">×</button>
+            </div>
+          ))}
+        </div>
+
+        <button
+          type="button"
+          onClick={addVariant}
+          className="mt-3 text-xs font-bold text-white/60 hover:text-white border border-white/15 rounded-full px-4 py-1.5"
+        >
+          + Add variant
+        </button>
       </div>
 
       <div className="flex items-center gap-3 pt-2">

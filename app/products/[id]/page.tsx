@@ -1,24 +1,8 @@
 // app/products/[id]/page.tsx
-import Image from "next/image";
 import Link from "next/link";
 import { prisma } from "@/lib/prisma";
-
-import DealCountdown from "@/app/_components/DealCountdown";
-import ProductsPurchaseActions from "@/app/_components/ProductsPurchaseActions";
-import MultiBuyBanner from "@/app/_components/MultiBuyBanner";
-
-function formatGBPFromPennies(value: unknown) {
-  const pennies = typeof value === "number" ? value : Number(value);
-  const safe = Number.isFinite(pennies) ? pennies : 0;
-  return `£${(safe / 100).toFixed(2)}`;
-}
-
-function pctOffPennies(basePennies: number, specialPennies: number) {
-  if (!Number.isFinite(basePennies) || basePennies <= 0) return 0;
-  if (!Number.isFinite(specialPennies) || specialPennies <= 0) return 0;
-  if (specialPennies >= basePennies) return 0;
-  return Math.round(((basePennies - specialPennies) / basePennies) * 100);
-}
+import ProductPageClient from "./ProductPageClient";
+import type { ProductVariant } from "@/app/_components/VariantSelector";
 
 function NotFoundCard({ subtitle }: { subtitle?: string }) {
   return (
@@ -35,6 +19,13 @@ function NotFoundCard({ subtitle }: { subtitle?: string }) {
       </div>
     </main>
   );
+}
+
+function pctOffPennies(basePennies: number, specialPennies: number) {
+  if (!Number.isFinite(basePennies) || basePennies <= 0) return 0;
+  if (!Number.isFinite(specialPennies) || specialPennies <= 0) return 0;
+  if (specialPennies >= basePennies) return 0;
+  return Math.round(((basePennies - specialPennies) / basePennies) * 100);
 }
 
 export default async function ProductPage(props: {
@@ -64,13 +55,12 @@ export default async function ProductPage(props: {
   });
 
   if (!product) {
-    return <NotFoundCard subtitle="This product doesn’t exist (or may have been removed)." />;
+    return <NotFoundCard subtitle="This product does not exist (or may have been removed)." />;
   }
 
   const stock = typeof product.stock === "number" ? product.stock : 0;
   const isBackOrder = stock <= 0;
 
-  // Weekly special / active deal (if any)
   const activeDeal = product.deals?.[0] ?? null;
 
   const basePennies = typeof product.price === "number" ? product.price : Number(product.price) || 0;
@@ -84,144 +74,33 @@ export default async function ProductPage(props: {
 
   const pct = reduced && dealPennies ? pctOffPennies(basePennies, dealPennies) : 0;
 
-  const unitPricePennies = reduced && dealPennies ? dealPennies : basePennies;
-
-  // Cap qty if stock is positive, otherwise allow larger for backorder
-  const maxQty = stock > 0 ? stock : 999;
+  // Parse variants
+  let variants: ProductVariant[] = [];
+  if ((product as any).variantsJson) {
+    try {
+      const parsed = JSON.parse((product as any).variantsJson);
+      if (Array.isArray(parsed)) variants = parsed;
+    } catch {}
+  }
 
   return (
-    <main className="min-h-screen bg-[#F6F8FB] px-6 py-10 text-[#0B1220]">
-      <div className="mx-auto max-w-6xl">
-        {/* Top bar */}
-        <div className="mb-6 flex items-center justify-between gap-3">
-          <Link href="/products" className="text-sm text-black/60 hover:text-black">
-            ← Back to products
-          </Link>
-
-          <div className="flex items-center gap-2">
-            {product.isActive === false ? (
-              <span className="rounded-full bg-rose-50 px-3 py-1 text-xs font-medium text-rose-700 ring-1 ring-inset ring-rose-100">
-                Inactive
-              </span>
-            ) : null}
-
-            {reduced ? (
-              <span className="rounded-full bg-emerald-50 px-3 py-1 text-xs font-semibold text-emerald-700 ring-1 ring-inset ring-emerald-100">
-                On sale {pct > 0 ? `(-${pct}%)` : ""}
-              </span>
-            ) : null}
-
-            <span
-              className={[
-                "rounded-full px-3 py-1 text-xs font-medium ring-1 ring-inset",
-                isBackOrder
-                  ? "bg-amber-50 text-amber-700 ring-amber-100"
-                  : "bg-emerald-50 text-emerald-700 ring-emerald-100",
-              ].join(" ")}
-            >
-              {isBackOrder ? "Back order" : `${stock} in stock`}
-            </span>
-          </div>
-        </div>
-
-        {/* Layout */}
-        <div className="grid gap-8 lg:grid-cols-2">
-          {/* Image card */}
-          <div className="overflow-hidden rounded-3xl border border-black/10 bg-white shadow-sm">
-            <div className="relative aspect-[4/3] w-full bg-[#F6F8FB]">
-              {product.image ? (
-                <Image
-                  src={product.image}
-                  alt={product.name}
-                  fill
-                  priority
-                  className="object-cover"
-                  sizes="(max-width: 1024px) 100vw, 50vw"
-                />
-              ) : (
-                <div className="absolute inset-0 grid place-items-center text-sm text-black/40">
-                  No image
-                </div>
-              )}
-            </div>
-          </div>
-
-          {/* Info card */}
-          <div className="rounded-3xl border border-black/10 bg-white p-8 shadow-sm">
-            <h1 className="text-3xl font-semibold tracking-tight">{product.name}</h1>
-
-            {/* Price */}
-            <div className="mt-4">
-              <p className="text-sm text-black/60">Price</p>
-
-              {reduced && typeof dealPennies === "number" ? (
-                <div className="mt-1 flex items-end gap-3">
-                  <p className="text-3xl font-semibold text-black">
-                    {formatGBPFromPennies(dealPennies)}
-                  </p>
-                  <p className="pb-1 text-sm text-black/45 line-through">
-                    {formatGBPFromPennies(basePennies)}
-                  </p>
-                </div>
-              ) : (
-                <p className="mt-1 text-3xl font-semibold">{formatGBPFromPennies(basePennies)}</p>
-              )}
-
-              {activeDeal?.endsAt ? (
-                <div className="mt-2">
-                  <DealCountdown
-                    endsAtIso={new Date(activeDeal.endsAt).toISOString()}
-                    className="text-xs text-black/60"
-                  />
-                </div>
-              ) : null}
-            </div>
-
-            {/* Description */}
-            {product.description ? (
-              <p className="mt-4 whitespace-pre-line text-sm leading-relaxed text-black/70">
-                {product.description}
-              </p>
-            ) : (
-              <p className="mt-4 text-sm leading-relaxed text-black/60">
-                Research-use product supplied for laboratory and analytical purposes only.
-              </p>
-            )}
-
-            {/* CTA */}
-            <div className="mt-6">
-              <ProductsPurchaseActions
-                productId={String(product.id)}
-                dealId={activeDeal?.id ?? null}
-                // NOTE: your component currently uses isBackOrder as "disable" too
-                // We keep behaviour: inactive blocks buying, backorder still allowed
-                isBackOrder={product.isActive === false ? true : false}
-                maxQty={maxQty}
-                name={product.name}
-                unitPricePennies={unitPricePennies}
-                image={product.image ?? null}
-              />
-
-              {isBackOrder ? (
-                <p className="mt-3 text-xs text-black/55">
-                  Back order — dispatched as soon as stock arrives.
-                </p>
-              ) : null}
-            </div>
-
-            {/* Multi-buy discounts */}
-            <div className="mt-5">
-              <MultiBuyBanner />
-            </div>
-
-            {/* Compliance / disclaimer */}
-            <div className="mt-4 rounded-2xl border border-black/10 bg-[#F6F8FB] p-4 text-xs text-black/55">
-              Research-use only. Not for human or veterinary consumption. Not intended to diagnose,
-              treat, cure, or prevent any disease.
-            </div>
-          </div>
-        </div>
-      </div>
-    </main>
+    <ProductPageClient
+      product={{
+        id: product.id,
+        name: product.name,
+        description: product.description ?? null,
+        image: product.image ?? null,
+        isActive: product.isActive,
+      }}
+      stock={stock}
+      isBackOrder={isBackOrder}
+      basePennies={basePennies}
+      dealPennies={dealPennies}
+      dealId={activeDeal?.id ?? null}
+      dealEndsAt={activeDeal?.endsAt ? new Date(activeDeal.endsAt).toISOString() : null}
+      reduced={reduced}
+      pct={pct}
+      variants={variants}
+    />
   );
 }
