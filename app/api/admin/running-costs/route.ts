@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { requireAdmin } from "@/lib/auth/requireAdmin";
 
+export const dynamic = "force-dynamic";
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
 
