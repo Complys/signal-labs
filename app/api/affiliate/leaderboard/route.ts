@@ -21,7 +21,7 @@ export async function GET() {
     _sum: { amountPennies: true },
     orderBy: { _sum: { amountPennies: "desc" } },
     take: 10,
-  });
+  }).catch(() => []);
 
   const affiliateIds = entries.map((e) => e.affiliateId);
   const affiliates = await prisma.affiliate.findMany({
