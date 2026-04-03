@@ -5,6 +5,7 @@ import { absUrl } from "@/lib/site";
 export const dynamic = "force-dynamic";
 
 export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
+  try {
   const posts = await prisma.blogPost.findMany({
     where: { published: true },
     select: { slug: true, updatedAt: true, publishedAt: true, category: true },
@@ -95,4 +96,7 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
   }));
 
   return [...staticRoutes, ...categoryRoutes, ...postRoutes];
+  } catch {
+    return [];
+  }
 }
