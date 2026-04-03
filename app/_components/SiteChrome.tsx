@@ -4,6 +4,7 @@ import { usePathname } from "next/navigation";
 import Header from "@/app/_components/Header";
 import PromoPopup from "@/app/_components/PromoPopup";
 import AnnouncementBar from "@/app/_components/AnnouncementBar";
+import AgeVerification from "@/app/_components/AgeVerification";
 
 export default function SiteChrome() {
   const pathname = usePathname();
@@ -14,6 +15,7 @@ export default function SiteChrome() {
 
   return (
     <>
+      <AgeVerification />
       <AnnouncementBar />
       <Header />
       <PromoPopup />
