@@ -93,6 +93,7 @@ const AFFILIATE_NAV: NavItem[] = [
 const SETTINGS_NAV: NavItem[] = [
   { label: "Shipping", href: "/admin/shipping" },
   { label: "Announcement Bar", href: "/admin/settings/announcement" },
+  { label: "Multi-buy Discounts", href: "/admin/settings/multibuy" },
 ];
 
 /** ---------------- Layout ---------------- */

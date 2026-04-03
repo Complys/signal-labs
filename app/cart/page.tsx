@@ -6,6 +6,7 @@ import React, { useEffect, useMemo, useRef, useState } from "react";
 import { useCart } from "@/app/_components/CartProvider";
 import ShippingNotice from "@/app/_components/ShippingNotice";
 import FreeDeliveryUpsell from "@/app/_components/FreeDeliveryUpsell";
+import MultiBuyBanner from "@/app/_components/MultiBuyBanner";
 
 type CartLine = {
   productId: string;
@@ -576,6 +577,9 @@ export default function CartPage() {
               }
               getQty={getSuggestionQty}
             />
+
+            {/* Multi-buy discount tiers */}
+            <MultiBuyBanner cartPennies={subtotalPennies} />
 
             {/* Totals */}
             <div className="rounded-3xl border border-black/10 bg-white p-5 shadow-sm">

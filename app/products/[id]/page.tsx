@@ -5,6 +5,7 @@ import { prisma } from "@/lib/prisma";
 
 import DealCountdown from "@/app/_components/DealCountdown";
 import ProductsPurchaseActions from "@/app/_components/ProductsPurchaseActions";
+import MultiBuyBanner from "@/app/_components/MultiBuyBanner";
 
 function formatGBPFromPennies(value: unknown) {
   const pennies = typeof value === "number" ? value : Number(value);
@@ -208,8 +209,13 @@ export default async function ProductPage(props: {
               ) : null}
             </div>
 
+            {/* Multi-buy discounts */}
+            <div className="mt-5">
+              <MultiBuyBanner />
+            </div>
+
             {/* Compliance / disclaimer */}
-            <div className="mt-6 rounded-2xl border border-black/10 bg-[#F6F8FB] p-4 text-xs text-black/55">
+            <div className="mt-4 rounded-2xl border border-black/10 bg-[#F6F8FB] p-4 text-xs text-black/55">
               Research-use only. Not for human or veterinary consumption. Not intended to diagnose,
               treat, cure, or prevent any disease.
             </div>
