@@ -1,3 +1,6 @@
+export const dynamic = "force-dynamic";
+export const runtime = "nodejs";
+
 // web/app/api/support/route.ts
 import { NextResponse } from "next/server";
 import sgMail from "@sendgrid/mail";

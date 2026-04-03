@@ -1,10 +1,12 @@
+export const dynamic = "force-dynamic";
+export const runtime = "nodejs";
+
 // app/api/admin/upload/route.ts
 import { NextResponse } from "next/server";
 import path from "path";
 import fs from "fs/promises";
 import { getToken } from "next-auth/jwt";
 
-export const runtime = "nodejs";
 
 const ALLOWED_MIME = new Set(["image/png", "image/jpeg", "image/webp"]);
 const MAX_BYTES = 5 * 1024 * 1024; // 5MB

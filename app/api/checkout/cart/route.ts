@@ -1,3 +1,6 @@
+export const dynamic = "force-dynamic";
+export const runtime = "nodejs";
+
 // app/api/checkout/cart/route.ts
 import { NextResponse } from "next/server";
 import { stripe } from "@/lib/stripe";
