@@ -4,6 +4,7 @@ import { Geist, Geist_Mono } from "next/font/google";
 import "./globals.css";
 
 import Link from "next/link";
+import NewsletterSignup from "./_components/NewsletterSignup";
 import { Providers } from "./providers";
 import SiteChrome from "./_components/SiteChrome";
 
@@ -108,8 +109,15 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
                   </div>
                 </div>
               </div>
-              <div className="mt-8 border-t border-black/10 pt-6 text-center text-xs text-black/40">
+              <div className="mt-8 border-t border-black/10 pt-6">
+                <div className="mb-6 rounded-2xl border border-black/10 bg-[#F6F8FB] px-6 py-5">
+                  <div className="text-sm font-semibold text-black/80 mb-1">Stay updated</div>
+                  <p className="text-xs text-black/55 mb-3">Research updates, new products, and restock notifications.</p>
+                  <NewsletterSignup />
+                </div>
+                <div className="text-center text-xs text-black/40">
                 © {new Date().getFullYear()} Signal Labs. All rights reserved.
+                </div>
               </div>
             </div>
           </footer>
