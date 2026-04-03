@@ -1,0 +1,650 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "sqlite"
+  url      = env("DATABASE_URL")
+}
+
+// =========================
+// Products
+// =========================
+model Product {
+  id            String  @id @default(cuid())
+  name          String
+  description   String?
+  price         Int // pennies
+  specialPrice  Int? // pennies (fallback special when no Deal)
+  image         String?
+  stripePriceId String?
+
+  isActive Boolean @default(true)
+  stock    Int     @default(0)
+
+  // ✅ per-unit cost (COGS) you enter in admin
+  costPennies Int?
+
+  // ✅ NEW: weight per unit in grams (for automatic postage cost)
+  weightGrams Int?
+
+  orderItems     OrderItem[]
+  deals          Deal[]
+  stockInterests StockInterest[]
+  stockPurchases StockPurchase[]
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([isActive, createdAt])
+  @@index([stock])
+  @@index([stripePriceId])
+}
+
+// =========================
+// Users
+// =========================
+model User {
+  id       String @id @default(cuid())
+  email    String @unique
+  password String
+  role     String @default("USER") // USER | ADMIN
+
+  firstName String?
+  lastName  String?
+  phone     String?
+
+  addressLine1 String?
+  addressLine2 String?
+  city         String?
+  postcode     String?
+  country      String?
+
+  stripeCustomerId String? @unique
+
+  credit Float @default(0)
+
+  orders Order[]
+
+  // ✅ Optional 1:1 link to an affiliate profile (if you later want “affiliate portal login”)
+  affiliate Affiliate?
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([role, createdAt])
+  @@index([createdAt])
+}
+
+// =========================
+// Affiliates (created ONLY after admin approval)
+// =========================
+model Affiliate {
+  id   String @id @default(cuid())
+  code String @unique
+
+  // Optional 1:1 link to a logged-in user
+  userId String? @unique
+  user   User?   @relation(fields: [userId], references: [id], onDelete: SetNull)
+
+  // Profile (filled from application on approval)
+  name      String
+  email     String?
+  website   String?
+  instagram String?
+  tiktok    String?
+  youtube   String?
+  facebook  String?
+
+  // SQLite-friendly "enum" as String
+  // Allowed: "APPROVED" | "DISABLED"
+  status   String  @default("APPROVED")
+  isActive Boolean @default(true)
+
+  wallet       AffiliateWallet?
+  transactions AffiliateTransaction[]
+
+  // ✅ Tier / perks system
+  // Allowed: "STANDARD" | "SILVER" | "GOLD" | "VIP"
+  tier String @default("STANDARD")
+
+  // % in basis points (e.g. 500 = 5.00%)
+  defaultRateBps Int @default(500)
+
+  // ✅ Optional override rate (better partners)
+  rateOverrideBps Int?
+
+  // ✅ Cookie duration per affiliate (days)
+  cookieDays Int @default(30)
+
+  // ✅ Optional perks blob (JSON string)
+  perksJson String?
+
+  // Latest terms acceptance snapshot (quick access)
+  termsVersion    String?
+  termsAcceptedAt DateTime?
+  termsIpHash     String?
+  termsUserAgent  String?
+
+  // Relations
+  orders  Order[]
+  clicks  AffiliateClick[]
+  payouts AffiliatePayoutRequest[]
+  accepts AffiliateTermsAcceptance[]
+
+  // ✅ Opposite relation for AffiliateApplication.affiliate
+  applications AffiliateApplication[]
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([status, createdAt])
+  @@index([isActive, createdAt])
+  @@index([email, createdAt])
+  @@index([tier, createdAt])
+}
+
+// =========================
+// Affiliate Applications (public sign-up; admin approves)
+// =========================
+model AffiliateApplication {
+  id String @id @default(cuid())
+
+  // Allowed: "PENDING" | "APPROVED" | "REJECTED"
+  status String @default("PENDING")
+
+  requestedCode String
+  name          String
+  email         String
+  website       String?
+  instagram     String?
+  tiktok        String?
+  youtube       String?
+  facebook      String?
+  notes         String?
+
+  affiliateId String?
+  affiliate   Affiliate? @relation(fields: [affiliateId], references: [id])
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([status, createdAt])
+  @@index([requestedCode])
+  @@index([email])
+}
+
+// =========================
+// Orders
+// =========================
+model Order {
+  id String @id @default(cuid())
+
+  userId String?
+  user   User?   @relation(fields: [userId], references: [id], onDelete: SetNull)
+
+  orderRef String @unique
+
+  // Optional: if you want a precomputed snapshot
+  cogsPennies Int @default(0)
+
+  stripeSessionId String? @unique
+  paymentIntentId String?
+
+  email        String?
+  receiptEmail String?
+
+  paymentMethod       String?
+  paymentMethodDetail String?
+
+  name    String?
+  company String?
+  phone   String?
+
+  addressLine1 String?
+  addressLine2 String?
+  city         String?
+  postcode     String?
+  country      String?
+
+  safePlace     String?
+  deliveryNotes String?
+
+  status      String @default("PENDING")
+  currency    String @default("gbp")
+  amountTotal Int    @default(0) // pennies
+
+  // ✅ what the customer paid for shipping (0 if free)
+  shippingChargedPennies Int @default(0)
+
+  // ✅ what shipping actually cost YOU (computed at checkout; editable later)
+  postageCostPennies Int @default(0)
+
+  trackingNo  String?
+  trackingUrl String?
+
+  stockDeducted Boolean @default(false)
+
+  affiliateId                String?
+  affiliate                  Affiliate? @relation(fields: [affiliateId], references: [id], onDelete: SetNull)
+  affiliateCode              String?
+  affiliateRateBpsSnapshot   Int?
+  affiliateCommissionPennies Int        @default(0)
+
+  items       OrderItem[]
+  emailEvents EmailEvent[]
+  events      OrderEvent[]
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([createdAt])
+  @@index([email, createdAt])
+  @@index([receiptEmail, createdAt])
+  @@index([userId, createdAt])
+  @@index([status, createdAt])
+  @@index([paymentIntentId])
+  @@index([affiliateId, createdAt])
+  @@index([affiliateCode, createdAt])
+  @@index([createdAt, status])
+}
+
+// =========================
+// Order Items
+// =========================
+model OrderItem {
+  id String @id @default(cuid())
+
+  orderId String
+  order   Order  @relation(fields: [orderId], references: [id], onDelete: Cascade)
+
+  productId String?
+  product   Product? @relation(fields: [productId], references: [id], onDelete: SetNull)
+
+  name      String
+  unitPrice Int // pennies
+  quantity  Int    @default(1)
+  lineTotal Int    @default(0) // pennies
+
+  // ✅ cost per unit snapshot for PROFIT analytics
+  unitCostPennies Int?
+
+  createdAt DateTime @default(now())
+
+  @@index([orderId])
+  @@index([productId])
+}
+
+// =========================
+// Deals
+// =========================
+model Deal {
+  id String @id @default(cuid())
+
+  productId String?
+  product   Product? @relation(fields: [productId], references: [id], onDelete: SetNull)
+
+  title        String
+  description  String?
+  image        String?
+  buttonLabel  String?
+  buttonUrl    String?
+  specialPrice Int // pennies
+
+  isActive Boolean @default(true)
+
+  startsAt DateTime
+  endsAt   DateTime?
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([productId])
+  @@index([isActive, startsAt, endsAt])
+}
+
+// =========================
+// Settings
+// =========================
+model SiteSetting {
+  key       String   @id
+  value     String
+  updatedAt DateTime @updatedAt
+
+  @@index([updatedAt])
+}
+
+model ShippingSettings {
+  id Int @id @default(1)
+
+  freeOverPennies Int     @default(3000) @map("freeOverPennies")
+  flatRatePennies Int     @default(499)
+  enabled         Boolean @default(true) @map("enabled")
+
+  updatedAt DateTime @updatedAt
+  createdAt DateTime @default(now())
+}
+
+// =========================
+// Leads
+// =========================
+model Lead {
+  id        String   @id @default(cuid())
+  name      String?
+  email     String   @unique
+  source    String?
+  createdAt DateTime @default(now())
+
+  @@index([createdAt])
+}
+
+// =========================
+// Email Events
+// =========================
+model EmailEvent {
+  id String @id @default(cuid())
+
+  orderId String
+  order   Order  @relation(fields: [orderId], references: [id], onDelete: Cascade)
+
+  type           String
+  idempotencyKey String @unique
+
+  status String @default("PENDING")
+
+  toEmail  String?
+  subject  String?
+  provider String?
+
+  providerMessageId String?
+  error             String?
+
+  createdAt DateTime  @default(now())
+  sentAt    DateTime?
+
+  @@index([orderId, createdAt])
+  @@index([type, createdAt])
+  @@index([status, createdAt])
+}
+
+// =========================
+// Order Counter
+// =========================
+model OrderCounter {
+  id        Int      @id
+  next      Int      @default(1)
+  updatedAt DateTime @updatedAt
+}
+
+// =========================
+// Order Events
+// =========================
+model OrderEvent {
+  id String @id @default(cuid())
+
+  orderId String
+  order   Order  @relation(fields: [orderId], references: [id], onDelete: Cascade)
+
+  type   String
+  source String
+
+  idempotencyKey String  @unique
+  summary        String?
+  data           String?
+
+  createdAt DateTime @default(now())
+
+  @@index([orderId, createdAt])
+  @@index([type])
+  @@index([source, createdAt])
+}
+
+// =========================
+// Stock Purchases
+// =========================
+model StockPurchase {
+  id String @id @default(cuid())
+
+  productId String
+  product   Product @relation(fields: [productId], references: [id], onDelete: Cascade)
+
+  qtyAdded         Int
+  unitCostPennies  Int
+  totalCostPennies Int
+
+  note String?
+
+  createdAt DateTime @default(now())
+
+  @@index([productId, createdAt])
+  @@index([createdAt])
+}
+
+// =========================
+// Business Expenses (legacy / optional)
+// =========================
+model BusinessExpense {
+  id String @id @default(cuid())
+
+  name     String
+  category String @default("OTHER")
+
+  amountPennies Int
+  incurredAt    DateTime @default(now())
+  notes         String?
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([incurredAt])
+  @@index([category, incurredAt])
+}
+
+// =========================
+// Blog
+// =========================
+model BlogPost {
+  id    String @id @default(cuid())
+  title String
+  slug  String @unique
+
+  excerpt         String?
+  contentMarkdown String
+
+  category String? @default("guides")
+
+  seoTitle       String?
+  seoDescription String?
+
+  heroImageUrl String?
+  heroImageAlt String?
+
+  heroImageWidth  Int?
+  heroImageHeight Int?
+  heroThumbUrl    String?
+
+  readingTimeMins Int?
+  tocJson         String?
+
+  published   Boolean   @default(false)
+  publishedAt DateTime?
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+
+  @@index([published, publishedAt])
+  @@index([category, published, publishedAt])
+  @@index([slug, published])
+}
+
+// =========================
+// Affiliate: Terms Acceptances
+// =========================
+model AffiliateTermsAcceptance {
+  id String @id @default(cuid())
+
+  affiliateId String
+  affiliate   Affiliate @relation(fields: [affiliateId], references: [id], onDelete: Cascade)
+
+  termsVersion String
+  termsUrl     String?
+  termsText    String?
+
+  acceptedAt DateTime @default(now())
+  ipHash     String?
+  userAgent  String?
+
+  @@index([affiliateId, acceptedAt])
+  @@index([termsVersion, acceptedAt])
+}
+
+// =========================
+// Affiliate: Click tracking
+// =========================
+model AffiliateClick {
+  id String @id @default(cuid())
+
+  affiliateId String
+  affiliate   Affiliate @relation(fields: [affiliateId], references: [id], onDelete: Cascade)
+
+  landingPath String?
+  referrer    String?
+  ipHash      String?
+  userAgent   String?
+
+  createdAt DateTime @default(now())
+
+  @@index([affiliateId, createdAt])
+}
+
+// =========================
+// Affiliate: Payout Requests
+// =========================
+model AffiliatePayoutRequest {
+  id String @id @default(cuid())
+
+  affiliateId String
+  affiliate   Affiliate @relation(fields: [affiliateId], references: [id], onDelete: Cascade)
+
+  status String @default("PENDING")
+
+  amountPennies Int
+  currency      String @default("gbp")
+
+  accountName   String
+  sortCode      String
+  accountNumber String
+  reference     String?
+  adminNote     String?
+
+  requestedAt DateTime  @default(now())
+  paidAt      DateTime?
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([affiliateId, requestedAt])
+  @@index([status, requestedAt])
+}
+
+
+// =========================
+// Affiliate: Wallet
+// =========================
+model AffiliateWallet {
+  id          String    @id @default(cuid())
+  affiliateId String    @unique
+  affiliate   Affiliate @relation(fields: [affiliateId], references: [id], onDelete: Cascade)
+
+  // Balances in pennies
+  pendingPennies   Int @default(0) // held for 30 days
+  availablePennies Int @default(0) // ready to withdraw
+
+  updatedAt DateTime @updatedAt
+
+  transactions AffiliateTransaction[]
+}
+
+// =========================
+// Affiliate: Transactions
+// =========================
+model AffiliateTransaction {
+  id       String           @id @default(cuid())
+  walletId String
+  wallet   AffiliateWallet  @relation(fields: [walletId], references: [id], onDelete: Cascade)
+
+  affiliateId String
+  affiliate   Affiliate @relation(fields: [affiliateId], references: [id], onDelete: Cascade)
+
+  // "COMMISSION" | "WITHDRAWAL" | "REVERSAL"
+  type String
+
+  amountPennies Int
+  currency      String @default("gbp")
+
+  // For commissions: order reference
+  orderId   String?
+  orderRef  String?
+
+  // Commission hold: available after this date
+  availableAt DateTime?
+
+  // Status: "PENDING" | "AVAILABLE" | "PAID" | "REVERSED"
+  status String @default("PENDING")
+
+  note      String?
+  createdAt DateTime @default(now())
+
+  @@index([affiliateId, createdAt])
+  @@index([walletId, status])
+  @@index([availableAt, status])
+}
+
+
+// =========================
+// Stock Interest / Waitlist
+// =========================
+model StockInterest {
+  id        String   @id @default(cuid())
+  productId String
+  product   Product  @relation(fields: [productId], references: [id], onDelete: Cascade)
+  email     String
+  notified  Boolean  @default(false)
+  createdAt DateTime @default(now())
+
+  @@unique([productId, email])
+  @@index([productId, notified])
+  @@index([email])
+}
+
+// =========================
+// Running Costs (overheads used in analytics)
+// =========================
+model RunningCost {
+  id            String   @id @default(cuid())
+  name          String
+  category      String?
+  amountPennies Int
+  incurredAt    DateTime @default(now())
+  notes         String?
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+
+  @@index([incurredAt])
+}
+
+// =========================
+// Postage Bands (for automatic postage cost)
+// =========================
+model PostageBand {
+  id             String   @id @default(cuid())
+  name           String
+  maxWeightGrams Int
+  maxItems       Int?
+  costPennies    Int
+  isActive       Boolean  @default(true)
+  sortOrder      Int      @default(0)
+  createdAt      DateTime @default(now())
+  updatedAt      DateTime @updatedAt
+
+  @@index([isActive, sortOrder])
+}
