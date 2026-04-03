@@ -1,10 +1,9 @@
 "use client";
 
-import { useEffect } from "react";
-
 export type ProductVariant = {
   label: string;
   pricePennies: number;
+  image?: string;
 };
 
 type Props = {

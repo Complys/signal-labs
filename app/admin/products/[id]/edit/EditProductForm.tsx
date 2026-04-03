@@ -453,26 +453,35 @@ export default function EditProductForm({
 
         <input type="hidden" name="variantsJson" value={JSON.stringify(variants)} />
 
-        <div className="space-y-2">
+        <div className="space-y-3">
           {variants.map((v, i) => (
-            <div key={i} className="flex items-center gap-2">
+            <div key={i} className="rounded-xl border border-white/10 bg-black/20 p-3 space-y-2">
+              <div className="flex items-center gap-2">
+                <input
+                  type="text"
+                  placeholder="Label e.g. 5mg"
+                  value={v.label}
+                  onChange={(e) => updateVariant(i, "label", e.target.value)}
+                  className="flex-1 rounded-xl bg-black/30 border border-white/10 px-3 py-2 text-sm text-white outline-none focus:border-white/20 placeholder:text-white/30"
+                />
+                <input
+                  type="number"
+                  step="0.01"
+                  min="0"
+                  placeholder="Price £"
+                  defaultValue={(v.pricePennies / 100).toFixed(2)}
+                  onBlur={(e) => updateVariant(i, "pricePennies", e.target.value)}
+                  className="w-28 rounded-xl bg-black/30 border border-white/10 px-3 py-2 text-sm text-white outline-none focus:border-white/20"
+                />
+                <button type="button" onClick={() => removeVariant(i)} className="text-red-400 hover:text-red-300 text-lg px-2">×</button>
+              </div>
               <input
                 type="text"
-                placeholder="Label e.g. 5mg"
-                value={v.label}
-                onChange={(e) => updateVariant(i, "label", e.target.value)}
-                className="flex-1 rounded-xl bg-black/30 border border-white/10 px-3 py-2 text-sm text-white outline-none focus:border-white/20 placeholder:text-white/30"
+                placeholder="Image URL for this variant (optional)"
+                value={(v as any).image ?? ""}
+                onChange={(e) => setVariants((prev) => prev.map((item, idx) => idx !== i ? item : { ...item, image: e.target.value }))}
+                className="w-full rounded-xl bg-black/30 border border-white/10 px-3 py-2 text-xs text-white outline-none focus:border-white/20 placeholder:text-white/30"
               />
-              <input
-                type="number"
-                step="0.01"
-                min="0"
-                placeholder="Price £"
-                defaultValue={(v.pricePennies / 100).toFixed(2)}
-                onBlur={(e) => updateVariant(i, "pricePennies", e.target.value)}
-                className="w-28 rounded-xl bg-black/30 border border-white/10 px-3 py-2 text-sm text-white outline-none focus:border-white/20"
-              />
-              <button type="button" onClick={() => removeVariant(i)} className="text-red-400 hover:text-red-300 text-lg px-2">×</button>
             </div>
           ))}
         </div>

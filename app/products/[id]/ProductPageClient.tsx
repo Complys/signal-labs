@@ -46,19 +46,17 @@ export default function ProductPageClient({
 }: Props) {
   const [selectedVariantIndex, setSelectedVariantIndex] = useState(0);
 
-  // If variants exist, the selected variant price overrides the base price
   const hasVariants = variants.length > 0;
   const selectedVariant = hasVariants ? variants[selectedVariantIndex] : null;
 
-  // Effective prices
   const effectiveBasePennies = selectedVariant ? selectedVariant.pricePennies : basePennies;
-
-  // Deals only apply if no variant selected (or we can apply proportionally — keep simple for now)
-  const effectiveDealPennies =
-    !hasVariants && reduced && dealPennies ? dealPennies : null;
-
+  const effectiveDealPennies = !hasVariants && reduced && dealPennies ? dealPennies : null;
   const showReduced = !!effectiveDealPennies;
   const displayPricePennies = effectiveDealPennies ?? effectiveBasePennies;
+
+  // Image: use variant image if set, otherwise fall back to product image
+  const displayImage =
+    (selectedVariant?.image) || product.image || null;
 
   const maxQty = stock > 0 ? stock : 999;
 
@@ -77,22 +75,20 @@ export default function ProductPageClient({
                 Inactive
               </span>
             ) : null}
-
             {showReduced ? (
               <span className="rounded-full bg-emerald-50 px-3 py-1 text-xs font-semibold text-emerald-700 ring-1 ring-inset ring-emerald-100">
                 On sale {pct > 0 ? `(-${pct}%)` : ""}
               </span>
             ) : null}
-
             <span
               className={[
                 "rounded-full px-3 py-1 text-xs font-medium ring-1 ring-inset",
                 isBackOrder
-                  ? "bg-amber-50 text-amber-700 ring-amber-100"
+                  ? "bg-rose-50 text-rose-700 ring-rose-100"
                   : "bg-emerald-50 text-emerald-700 ring-emerald-100",
               ].join(" ")}
             >
-              {isBackOrder ? "Back order" : `${stock} in stock`}
+              {isBackOrder ? "Out of stock" : "In stock"}
             </span>
           </div>
         </div>
@@ -102,13 +98,14 @@ export default function ProductPageClient({
           {/* Image card */}
           <div className="overflow-hidden rounded-3xl border border-black/10 bg-white shadow-sm">
             <div className="relative aspect-[4/3] w-full bg-[#F6F8FB]">
-              {product.image ? (
+              {displayImage ? (
                 <Image
-                  src={product.image}
+                  key={displayImage}
+                  src={displayImage}
                   alt={product.name}
                   fill
                   priority
-                  className="object-cover"
+                  className="object-cover transition-opacity duration-200"
                   sizes="(max-width: 1024px) 100vw, 50vw"
                 />
               ) : (
@@ -135,7 +132,6 @@ export default function ProductPageClient({
             {/* Price */}
             <div className="mt-4">
               <p className="text-sm text-black/60">Price</p>
-
               {showReduced && effectiveDealPennies ? (
                 <div className="mt-1 flex items-end gap-3">
                   <p className="text-3xl font-semibold text-black">
@@ -150,13 +146,9 @@ export default function ProductPageClient({
                   {formatGBPFromPennies(displayPricePennies)}
                 </p>
               )}
-
               {dealEndsAt ? (
                 <div className="mt-2">
-                  <DealCountdown
-                    endsAtIso={dealEndsAt}
-                    className="text-xs text-black/60"
-                  />
+                  <DealCountdown endsAtIso={dealEndsAt} className="text-xs text-black/60" />
                 </div>
               ) : null}
             </div>
@@ -179,16 +171,11 @@ export default function ProductPageClient({
                 dealId={!hasVariants ? dealId : null}
                 isBackOrder={product.isActive === false ? true : isBackOrder}
                 maxQty={maxQty}
+                stock={stock}
                 name={hasVariants && selectedVariant ? `${product.name} — ${selectedVariant.label}` : product.name}
                 unitPricePennies={displayPricePennies}
-                image={product.image ?? null}
+                image={displayImage}
               />
-
-              {isBackOrder ? (
-                <p className="mt-3 text-xs text-black/55">
-                  Back order — dispatched as soon as stock arrives.
-                </p>
-              ) : null}
             </div>
 
             {/* Multi-buy discounts */}
@@ -196,7 +183,7 @@ export default function ProductPageClient({
               <MultiBuyBanner />
             </div>
 
-            {/* Compliance / disclaimer */}
+            {/* Compliance */}
             <div className="mt-4 rounded-2xl border border-black/10 bg-[#F6F8FB] p-4 text-xs text-black/55">
               Research-use only. Not for human or veterinary consumption. Not intended to diagnose,
               treat, cure, or prevent any disease.

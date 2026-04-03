@@ -16,6 +16,7 @@ type Props = {
   name: string;
   unitPricePennies: number;
   image?: string | null;
+  stock?: number;
 };
 
 function toInt(x: unknown) {
@@ -38,6 +39,7 @@ export default function ProductsPurchaseActions({
   name,
   unitPricePennies,
   image = null,
+  stock,
 }: Props) {
   const cap = useMemo(() => {
     if (isBackOrder) return 999;
@@ -82,6 +84,9 @@ export default function ProductsPurchaseActions({
   }
 
   const buyLabel = disabled ? "Unavailable" : isBackOrder ? "Back order" : "Buy";
+
+  const stockNum = typeof stock === "number" ? stock : null;
+  const showLowStock = stockNum !== null && stockNum > 0 && qty > stockNum;
 
   return (
     <div className="w-full">
@@ -145,6 +150,13 @@ export default function ProductsPurchaseActions({
           />
         </div>
       </div>
+
+      {/* Low stock warning */}
+      {showLowStock && stockNum !== null ? (
+        <p className="mt-2 text-xs font-semibold text-amber-700">
+          Only {stockNum} in stock — your order will be adjusted at checkout.
+        </p>
+      ) : null}
 
       {/* Add to cart */}
       <div className="mt-3">
