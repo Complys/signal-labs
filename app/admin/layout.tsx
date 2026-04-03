@@ -90,7 +90,10 @@ const AFFILIATE_NAV: NavItem[] = [
   { label: "Payouts", href: "/admin/affiliate-payouts" },
 ];
 
-const SETTINGS_NAV: NavItem[] = [{ label: "Shipping", href: "/admin/shipping" }];
+const SETTINGS_NAV: NavItem[] = [
+  { label: "Shipping", href: "/admin/shipping" },
+  { label: "Announcement Bar", href: "/admin/settings/announcement" },
+];
 
 /** ---------------- Layout ---------------- */
 export default async function AdminLayout({ children }: { children: ReactNode }) {
