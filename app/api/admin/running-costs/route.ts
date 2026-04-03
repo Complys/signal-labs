@@ -4,7 +4,6 @@ import { requireAdmin } from "@/lib/auth/requireAdmin";
 
 export const dynamic = "force-dynamic";
 export const runtime = "nodejs";
-export const dynamic = "force-dynamic";
 
 function safeStr(v: unknown) {
   return String(v ?? "").trim();
