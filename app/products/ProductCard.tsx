@@ -17,6 +17,7 @@ type Props = {
     stock: number;
     isActive: boolean;
     variantsJson?: string | null;
+    allDeals?: Array<{ id: string; specialPrice: number; variantLabel?: string | null; endsAt?: string | null }>;
   };
   basePennies: number;
   dealId: string | null;
@@ -167,7 +168,15 @@ export default function ProductCard({
 
         {/* Price */}
         <div className="mt-2">
-          {hasVariants ? (
+          {hasVariants && showReduced && effectiveDealPennies ? (
+            <div className="leading-tight">
+              <div className="text-sm font-extrabold text-black">
+                {fmt(effectiveDealPennies)}
+              </div>
+              <div className="text-[11px] text-black/50 line-through">{fmt(effectiveBasePennies)}</div>
+              <div className="text-[11px] font-bold text-green-600">-{effectivePct}% off</div>
+            </div>
+          ) : hasVariants ? (
             <div className="text-sm font-semibold">
               {selectedVariant ? fmt(selectedVariant.pricePennies) : `From ${fmt(fromPrice)}`}
             </div>
@@ -187,7 +196,7 @@ export default function ProductCard({
         <div className="mt-3">
           <ProductsPurchaseActions
             productId={product.id}
-            dealId={!hasVariants ? dealId : null}
+            dealId={effectiveDealId ?? null}
             isBackOrder={isBackOrder}
             disabled={disabled}
             maxQty={maxQty}

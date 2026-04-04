@@ -256,6 +256,7 @@ export default async function ProductsPage({
                     stock,
                     isActive: p.isActive,
                     variantsJson: (p as any).variantsJson ?? null,
+                  allDeals: p.deals ?? [],
                   }}
                   basePennies={basePennies}
                   dealId={activeDeal?.id ?? null}
