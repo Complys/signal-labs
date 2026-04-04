@@ -139,21 +139,25 @@ export default function ProductCard({
         {/* Variant pills */}
         {hasVariants && (
           <div className="mt-2 flex flex-wrap gap-1">
-            {variants.map((v, i) => (
-              <button
+            {variants.map((v, i) => {
+          const oos = typeof (v as any).stock === "number" && (v as any).stock <= 0;
+          const sel = selectedIndex === i;
+          let cls = "rounded-full border px-2.5 py-1 text-xs font-semibold transition ";
+          if (sel && oos) cls += "border-rose-500 bg-rose-500 text-white";
+          else if (sel) cls += "border-black bg-black text-white";
+          else if (oos) cls += "border-black/15 bg-white text-black/35 hover:border-rose-300";
+          else cls += "border-black/20 bg-white text-black hover:border-black/50";
+          return (
+          <button
                 key={i}
                 type="button"
                 onClick={() => setSelectedIndex(i)}
-                className={[
-                  "rounded-full border px-2.5 py-1 text-xs font-semibold transition",
-                  selectedIndex === i
-                    ? "border-black bg-black text-white"
-                    : "border-black/20 bg-white text-black hover:border-black/50",
-                ].join(" ")}
+                className={cls}
               >
-                {v.label}
+                {oos ? <span className="line-through">{v.label}</span> : v.label}
               </button>
-            ))}
+          );
+        })}
           </div>
         )}
 
