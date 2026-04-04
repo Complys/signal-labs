@@ -466,9 +466,8 @@ export default function NewProductPage() {
                         className="flex-1 rounded-xl border border-white/10 bg-black/40 px-3 py-2 text-sm text-white outline-none focus:border-yellow-400/60 placeholder:text-white/30"
                       />
                       <input
-                        type="number"
-                        step="0.01"
-                        min="0"
+                        type="text"
+                        inputMode="decimal"
                         placeholder="Price £"
                         value={(v.pricePennies / 100).toFixed(2)}
                         onChange={(e) => updateVariant(i, "pricePennies", e.target.value)}

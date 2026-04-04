@@ -104,7 +104,7 @@ export default function EditProductForm({
   const [specialLive, setSpecialLive] = useState(defaults.specialPrice);
   const [onSpecialLive, setOnSpecialLive] = useState(defaults.onSpecial);
   const [percentLive, setPercentLive] = useState<string>("");
-  const [variants, setVariants] = useState<Array<{ label: string; pricePennies: number; image?: string }>>(defaults.variants ?? []);
+  const [variants, setVariants] = useState<Array<{ label: string; pricePennies: number; image?: string; stock?: number }>>(defaults.variants ?? []);
   const [variantPriceRaw, setVariantPriceRaw] = useState<string[]>(
     () => (defaults.variants ?? []).map((v) => (v.pricePennies / 100).toFixed(2))
   );
@@ -341,7 +341,13 @@ export default function EditProductForm({
 
       <div>
         <label className="text-sm text-white/70">Product image</label>
-        <input type="hidden" name="image" value={mainImageLive} />
+        <textarea
+          name="image"
+          value={mainImageLive}
+          onChange={() => {}}
+          style={{ display: "none" }}
+          aria-hidden="true"
+        />
 
         {mainImageLive ? (
           <div className="mt-2 flex items-center gap-3 mb-2">
@@ -544,9 +550,8 @@ export default function EditProductForm({
                   className="flex-1 rounded-xl bg-black/30 border border-white/10 px-3 py-2 text-sm text-white outline-none focus:border-white/20 placeholder:text-white/30"
                 />
                 <input
-                  type="number"
-                  step="0.01"
-                  min="0"
+                  type="text"
+                  inputMode="decimal"
                   placeholder="Price £"
                   value={variantPriceRaw[i] ?? (v.pricePennies / 100).toFixed(2)}
                   onChange={(e) => {
@@ -559,6 +564,17 @@ export default function EditProductForm({
                     updateVariant(i, "pricePennies", val);
                   }}
                   className="w-28 rounded-xl bg-black/30 border border-white/10 px-3 py-2 text-sm text-white outline-none focus:border-white/20"
+                />
+                <input
+                  type="text"
+                  inputMode="numeric"
+                  placeholder="Stock"
+                  value={String(v.stock ?? 0)}
+                  onChange={(e) => setVariants((prev) => prev.map((item, idx) =>
+                    idx !== i ? item : { ...item, stock: parseInt(e.target.value) || 0 }
+                  ))}
+                  className="w-20 rounded-xl bg-black/30 border border-white/10 px-3 py-2 text-sm text-white outline-none focus:border-white/20"
+                  title="Stock for this variant"
                 />
                 <button type="button" onClick={() => removeVariant(i)} className="text-red-400 hover:text-red-300 text-xl leading-none px-1">×</button>
               </div>
