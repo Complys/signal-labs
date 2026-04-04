@@ -99,9 +99,20 @@ function getProductBasics(d: DealRow) {
   const productName = (product?.name || "").trim();
   const description = (d.description || product?.description || "").trim();
 
-  const image = (d.image || product?.image || "").trim();
   const variantLabel = (d as any).variantLabel?.trim() || null;
   const titleText = variantLabel ? `${productName} — ${variantLabel}` : (productName || "Weekly Special");
+
+  // If deal has variantLabel, find that variant's image from product variantsJson
+  let variantSpecificImage: string | null = null;
+  if (variantLabel && (d as any).product) {
+    try {
+      const variants = JSON.parse((d as any).product.variantsJson ?? "[]");
+      const match = variants.find((v: any) => v.label === variantLabel);
+      if (match?.image) variantSpecificImage = match.image;
+    } catch {}
+  }
+
+  const image = (variantSpecificImage || d.image || product?.image || "").trim();
 
   const stock = typeof product?.stock === "number" ? product.stock : 0;
   const isBackOrder = stock <= 0;

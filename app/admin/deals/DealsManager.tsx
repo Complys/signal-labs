@@ -1,16 +1,22 @@
 "use client";
 
-import Image from "next/image";
 import { useEffect, useMemo, useRef, useState } from "react";
+
+type ProductVariant = {
+  label: string;
+  pricePennies: number;
+  image?: string;
+  stock?: number;
+};
 
 type Product = {
   id: string;
   name: string;
-  description?: string | null;
-  price: number; // pennies
+  price: number;
   image?: string | null;
   isActive: boolean;
   stock: number;
+  variantsJson?: string | null;
 };
 
 type Deal = {
@@ -21,25 +27,37 @@ type Deal = {
   image?: string | null;
   buttonLabel?: string | null;
   buttonUrl?: string | null;
-  specialPrice: number; // pennies
+  specialPrice: number;
   variantLabel?: string | null;
   isActive: boolean;
-  startsAt: string; // ISO
-  endsAt?: string | null; // ISO
+  startsAt: string;
+  endsAt?: string | null;
 };
 
 type Props = {
   products: Product[];
-  dealsByProductId: Record<string, Deal>;
+  dealsByKey: Record<string, Deal>;
 };
 
-const PERKS = [
-  "Free delivery",
-  "Limited time",
-  "Best seller",
-  "New in",
-  "Reduced price",
-] as const;
+type Row = {
+  productId: string;
+  productName: string;
+  productPrice: number;
+  productImage: string | null;
+  variantLabel: string;       // "" = whole product, "5mg" = specific variant
+  variantImage: string;       // variant-specific image
+  variantPrice: number;       // variant price in pennies
+
+  dealId: string | null;
+  enabled: boolean;
+  specialPriceGBP: string;
+  startsAtLocal: string;
+  endsAtLocal: string;
+
+  saving: boolean;
+  error: string;
+  saved: boolean;
+};
 
 function penniesToPounds(p: number) {
   return (p / 100).toFixed(2);
@@ -54,681 +72,268 @@ function poundsToPennies(v: string) {
 function toLocalInputValue(iso: string) {
   const d = new Date(iso);
   const pad = (x: number) => String(x).padStart(2, "0");
-  return `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}T${pad(
-    d.getHours()
-  )}:${pad(d.getMinutes())}`;
+  return `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}T${pad(d.getHours())}:${pad(d.getMinutes())}`;
 }
 
 function fromLocalInputValue(v: string) {
-  const d = new Date(v);
-  return d.toISOString();
+  return new Date(v).toISOString();
 }
 
-function parsePerks(desc?: string | null) {
-  if (!desc) return new Set<string>();
-  const m = desc.match(/Perks:\s*(.*)$/im);
-  if (!m) return new Set<string>();
-  const list = m[1]
-    .split(",")
-    .map((s) => s.trim())
-    .filter(Boolean);
-  return new Set(list);
-}
-
-function buildDescription(base: string, perks: Set<string>) {
-  const cleanBase = (base || "").replace(/Perks:.*$/im, "").trim();
-  const perkLine = perks.size ? `\n\nPerks: ${Array.from(perks).join(", ")}` : "";
-  return (cleanBase + perkLine).trim();
-}
-
-function dealStatusLabel(
-  enabled: boolean,
-  startsAtIso: string,
-  endsAtIso?: string | null
-) {
-  if (!enabled) return { label: "Disabled", cls: "text-white/45" };
-
+function dealStatus(enabled: boolean, startsAt: string, endsAt?: string | null) {
+  if (!enabled) return { label: "Off", cls: "text-white/40" };
   const now = Date.now();
-  const s = new Date(startsAtIso).getTime();
-  const e = endsAtIso ? new Date(endsAtIso).getTime() : null;
-
-  if (Number.isFinite(s) && s > now) return { label: "Upcoming", cls: "text-blue-300" };
+  const s = new Date(startsAt).getTime();
+  const e = endsAt ? new Date(endsAt).getTime() : null;
+  if (s > now) return { label: "Upcoming", cls: "text-blue-300" };
   if (e && e < now) return { label: "Expired", cls: "text-red-300" };
-  return { label: "Live", cls: "text-green-300" };
+  return { label: "Live", cls: "text-emerald-300" };
 }
 
-// ✅ Safe URL helper (prevents /products/www.1.co.uk ever happening again)
-function normalizeExternalUrl(u: unknown): string | null {
-  if (typeof u !== "string") return null;
-  const raw = u.trim();
-  if (!raw) return null;
-  if (raw.startsWith("http://") || raw.startsWith("https://")) return raw;
-  if (raw.startsWith("www.")) return `https://${raw}`;
-  return null;
+function buildRows(products: Product[], dealsByKey: Record<string, Deal>): Row[] {
+  const now = new Date().toISOString();
+  const rows: Row[] = [];
+
+  for (const p of products) {
+    let variants: ProductVariant[] = [];
+    try {
+      if (p.variantsJson) {
+        const parsed = JSON.parse(p.variantsJson);
+        if (Array.isArray(parsed) && parsed.length > 0) variants = parsed;
+      }
+    } catch {}
+
+    if (variants.length > 0) {
+      // One row per variant
+      for (const v of variants) {
+        const key = `${p.id}::${v.label}`;
+        const d = dealsByKey[key];
+        rows.push({
+          productId: p.id,
+          productName: p.name,
+          productPrice: p.price,
+          productImage: p.image ?? null,
+          variantLabel: v.label,
+          variantImage: v.image ?? "",
+          variantPrice: v.pricePennies,
+          dealId: d?.id ?? null,
+          enabled: d ? Boolean(d.isActive) : false,
+          specialPriceGBP: d ? penniesToPounds(d.specialPrice) : penniesToPounds(v.pricePennies),
+          startsAtLocal: toLocalInputValue(d?.startsAt ?? now),
+          endsAtLocal: d?.endsAt ? toLocalInputValue(d.endsAt) : "",
+          saving: false,
+          error: "",
+          saved: false,
+        });
+      }
+    } else {
+      // No variants — one row for whole product
+      const key = `${p.id}::`;
+      const d = dealsByKey[key];
+      rows.push({
+        productId: p.id,
+        productName: p.name,
+        productPrice: p.price,
+        productImage: p.image ?? null,
+        variantLabel: "",
+        variantImage: "",
+        variantPrice: p.price,
+        dealId: d?.id ?? null,
+        enabled: d ? Boolean(d.isActive) : false,
+        specialPriceGBP: d ? penniesToPounds(d.specialPrice) : penniesToPounds(p.price),
+        startsAtLocal: toLocalInputValue(d?.startsAt ?? now),
+        endsAtLocal: d?.endsAt ? toLocalInputValue(d.endsAt) : "",
+        saving: false,
+        error: "",
+        saved: false,
+      });
+    }
+  }
+
+  return rows;
 }
 
-type Row = {
-  product: Product;
-
-  dealId: string | null;
-  enabled: boolean;
-
-  title: string;
-  description: string;
-  perks: Set<string>;
-
-  specialPriceGBP: string;
-
-  startsAtLocal: string; // datetime-local
-  endsAtLocal: string; // datetime-local or ""
-
-  buttonLabel: string;
-  buttonUrl: string;
-  variantLabel: string;
-
-  image: string; // override image URL
-
-  saving: boolean;
-  error: string;
-  saved: boolean;
-  dirty: boolean;
-};
-
-function buildInitialRows(products: Product[], dealsByProductId: Record<string, Deal>) {
-  const nowIso = new Date().toISOString();
-
-  return products.map((p) => {
-    const d = dealsByProductId[p.id];
-
-    const perks = d ? parsePerks(d.description) : new Set<string>();
-    const title = d?.title || `${p.name} — Weekly Special`;
-
-    const startsAtIso = d?.startsAt || nowIso;
-    const endsAtIso = d?.endsAt || null;
-
-    const overrideImage = d?.image || "";
-    const variantLabel = d?.variantLabel || "";
-
-    return {
-      product: p,
-
-      dealId: d?.id || null,
-      enabled: d ? Boolean(d.isActive) : false,
-
-      title,
-      description: d?.description || "",
-      perks,
-
-      specialPriceGBP: d ? penniesToPounds(d.specialPrice) : penniesToPounds(p.price),
-
-      startsAtLocal: toLocalInputValue(startsAtIso),
-      endsAtLocal: endsAtIso ? toLocalInputValue(endsAtIso) : "",
-
-      buttonLabel: d?.buttonLabel || "View",
-      buttonUrl: d?.buttonUrl || "",
-
-      image: overrideImage,
-      variantLabel,
-
-      saving: false,
-      error: "",
-      saved: false,
-      dirty: false,
-    } satisfies Row;
-  });
-}
-
-export default function DealsManager({ products, dealsByProductId }: Props) {
-  const initial = useMemo(
-    () => buildInitialRows(products, dealsByProductId),
-    [products, dealsByProductId]
-  );
-
+export default function DealsManager({ products, dealsByKey }: Props) {
+  const initial = useMemo(() => buildRows(products, dealsByKey), [products, dealsByKey]);
   const [rows, setRows] = useState<Row[]>(initial);
 
-  // Keep UI in sync with server props unless user has edits
-  const hydratedRef = useRef(false);
-  useEffect(() => {
-    if (!hydratedRef.current) {
-      hydratedRef.current = true;
-      setRows(initial);
-      return;
-    }
-
-    const hasEdits = rows.some((r) => r.dirty || r.saving);
-    if (!hasEdits) setRows(initial);
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [initial]);
-
-  const totalEnabled = rows.reduce((acc, r) => acc + (r.enabled ? 1 : 0), 0);
-
-  function updateRow(idx: number, patch: Partial<Row>) {
-    setRows((prev) =>
-      prev.map((r, i) => (i === idx ? { ...r, ...patch, dirty: true, saved: false } : r))
-    );
+  function updateRow(i: number, patch: Partial<Row>) {
+    setRows((prev) => prev.map((r, idx) => idx !== i ? r : { ...r, ...patch }));
   }
 
-  function togglePerk(idx: number, perk: string) {
-    setRows((prev) =>
-      prev.map((row, i) => {
-        if (i !== idx) return row;
-        const next = new Set(row.perks);
-        if (next.has(perk)) next.delete(perk);
-        else next.add(perk);
-        return { ...row, perks: next, dirty: true, saved: false };
-      })
-    );
-  }
+  async function saveRow(i: number) {
+    const row = rows[i];
+    if (!row) return;
 
-  async function saveRow(idx: number) {
-    const snapshot = rows[idx];
-    if (!snapshot) return;
+    updateRow(i, { saving: true, error: "" });
 
-    setRows((prev) =>
-      prev.map((r, i) =>
-        i === idx ? { ...r, saving: true, error: "", saved: false } : r
-      )
-    );
-
-    const p = snapshot.product;
-    const desc = buildDescription(snapshot.description, snapshot.perks);
-    const specialPennies = poundsToPennies(snapshot.specialPriceGBP);
-
-    if (specialPennies <= 0) {
-      setRows((prev) =>
-        prev.map((r, i) =>
-          i === idx
-            ? { ...r, saving: false, error: "Special price must be greater than £0.00" }
-            : r
-        )
-      );
-      return;
-    }
-
-    if (!snapshot.startsAtLocal) {
-      setRows((prev) =>
-        prev.map((r, i) =>
-          i === idx ? { ...r, saving: false, error: "Starts date is required." } : r
-        )
-      );
-      return;
-    }
-
-    // ✅ store sanitized external url (null unless http(s))
-    const normalizedButtonUrl = normalizeExternalUrl(snapshot.buttonUrl);
+    const specialPennies = poundsToPennies(row.specialPriceGBP);
+    const title = row.variantLabel
+      ? `${row.productName} — ${row.variantLabel} Weekly Special`
+      : `${row.productName} — Weekly Special`;
 
     const payload = {
-      productId: p.id,
-      isActive: snapshot.enabled,
-      title: snapshot.title.trim() || `${p.name} — Weekly Special`,
-      description: desc || null,
-      image: snapshot.image || null,
-      buttonLabel: snapshot.buttonLabel || null,
-      buttonUrl: normalizedButtonUrl, // ✅ safe
+      productId: row.productId,
+      title,
       specialPrice: specialPennies,
-          variantLabel: snapshot.variantLabel?.trim() || null,
-      startsAt: fromLocalInputValue(snapshot.startsAtLocal),
-      endsAt: snapshot.endsAtLocal ? fromLocalInputValue(snapshot.endsAtLocal) : null,
+      variantLabel: row.variantLabel || null,
+      image: row.variantImage || row.productImage || null,
+      isActive: row.enabled,
+      startsAt: fromLocalInputValue(row.startsAtLocal),
+      endsAt: row.endsAtLocal ? fromLocalInputValue(row.endsAtLocal) : null,
+      description: null,
+      buttonLabel: null,
+      buttonUrl: null,
     };
 
     try {
-      const res = await fetch(
-        snapshot.dealId ? `/api/admin/deals/${snapshot.dealId}` : `/api/admin/deals`,
-        {
-          method: snapshot.dealId ? "PATCH" : "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify(payload),
-        }
-      );
+      const url = row.dealId ? `/api/admin/deals/${row.dealId}` : `/api/admin/deals`;
+      const method = row.dealId ? "PUT" : "POST";
 
-      const data = await res.json().catch(() => null);
-      if (!res.ok) throw new Error(data?.error || `Failed (${res.status})`);
+      const res = await fetch(url, {
+        method,
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(payload),
+      });
 
-      const newId = data?.deal?.id || snapshot.dealId;
+      const json = await res.json().catch(() => ({}));
 
-      setRows((prev) =>
-        prev.map((r, i) =>
-          i === idx
-            ? {
-                ...r,
-                dealId: newId ?? r.dealId,
-                saving: false,
-                saved: true,
-                error: "",
-                dirty: false,
-                // reflect normalized value in UI too (so it doesn't re-break later)
-                buttonUrl: normalizedButtonUrl || "",
-              }
-            : r
-        )
-      );
+      if (!res.ok) {
+        updateRow(i, { saving: false, error: json?.error || "Save failed" });
+        return;
+      }
+
+      const dealId = json?.deal?.id ?? json?.id ?? row.dealId;
+      updateRow(i, { saving: false, saved: true, dealId, error: "" });
+      setTimeout(() => updateRow(i, { saved: false }), 3000);
     } catch (e: any) {
-      setRows((prev) =>
-        prev.map((r, i) =>
-          i === idx ? { ...r, saving: false, error: e?.message || "Save failed" } : r
-        )
-      );
+      updateRow(i, { saving: false, error: e?.message || "Save failed" });
     }
   }
 
-  function autoFillFromProduct(idx: number) {
-    const row = rows[idx];
-    if (!row) return;
-
-    const productImage = row.product.image || "";
-    const defaultTitle = `${row.product.name} — Weekly Special`;
-    const nowLocal = toLocalInputValue(new Date().toISOString());
-
-    updateRow(idx, {
-      title: row.title?.trim() ? row.title : defaultTitle,
-      specialPriceGBP: row.specialPriceGBP || penniesToPounds(row.product.price),
-      startsAtLocal: row.startsAtLocal || nowLocal,
-      image: row.image || productImage,
-      buttonLabel: row.buttonLabel || "View",
-    });
-  }
-
-  function setEnabled(idx: number, enabled: boolean) {
-    setRows((prev) =>
-      prev.map((r, i) => {
-        if (i !== idx) return r;
-
-        const next = { ...r, enabled, dirty: true, saved: false };
-        if (enabled) {
-          const nowIso = new Date().toISOString();
-          if (!next.startsAtLocal) next.startsAtLocal = toLocalInputValue(nowIso);
-          if (!next.specialPriceGBP) next.specialPriceGBP = penniesToPounds(r.product.price);
-          if (!next.title?.trim()) next.title = `${r.product.name} — Weekly Special`;
-          if (!next.buttonLabel) next.buttonLabel = "View";
-        }
-        return next;
-      })
-    );
+  // Group rows by product for display
+  const grouped: { productName: string; productId: string; rows: { row: Row; index: number }[] }[] = [];
+  for (const [i, row] of rows.entries()) {
+    const last = grouped[grouped.length - 1];
+    if (last && last.productId === row.productId) {
+      last.rows.push({ row, index: i });
+    } else {
+      grouped.push({ productName: row.productName, productId: row.productId, rows: [{ row, index: i }] });
+    }
   }
 
   return (
-    <div className="w-full">
-      {/* Top helper row */}
-      <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
-        <div className="text-sm text-white/70">
-          {rows.length} product{rows.length === 1 ? "" : "s"} ·{" "}
-          <span className="text-white/90 font-semibold">{totalEnabled}</span>{" "}
-          special{totalEnabled === 1 ? "" : "s"} enabled
-        </div>
-        <div className="text-xs text-white/50">
-          Tip: enable a deal + set <span className="font-semibold">Starts</span> in the past to make it live.
-        </div>
-      </div>
+    <div className="space-y-6">
+      {grouped.map((group) => (
+        <div key={group.productId} className="rounded-2xl border border-white/10 bg-white/5 overflow-hidden">
+          {/* Product header */}
+          <div className="px-5 py-3 bg-white/5 border-b border-white/10">
+            <h3 className="text-sm font-bold text-white">{group.productName}</h3>
+          </div>
 
-      {/* Table */}
-      <div className="mt-4 overflow-auto rounded-2xl border border-white/10">
-        <table className="min-w-[1180px] w-full text-left text-sm">
-          <thead className="bg-white/5 text-white/70">
-            <tr>
-              <th className="px-4 py-3 w-[70px]">Special</th>
-              <th className="px-4 py-3 w-[360px]">Product</th>
-              <th className="px-4 py-3 w-[160px]">Special price (£)</th>
-              <th className="px-4 py-3 w-[220px]">Starts</th>
-              <th className="px-4 py-3 w-[220px]">Ends (optional)</th>
-              <th className="px-4 py-3 w-[260px]">Perks</th>
-              <th className="px-4 py-3 w-[190px]">CTA</th>
-              <th className="px-4 py-3 w-[160px]">Action</th>
-            </tr>
-          </thead>
-
-          <tbody className="divide-y divide-white/10">
-            {rows.map((row, idx) => {
-              const productThumb = row.product.image || "";
-              const overrideThumb = row.image || "";
-              const thumbToShow = overrideThumb || productThumb;
-
-              const startsIso = row.startsAtLocal
-                ? fromLocalInputValue(row.startsAtLocal)
-                : new Date().toISOString();
-              const endsIso = row.endsAtLocal ? fromLocalInputValue(row.endsAtLocal) : null;
-
-              const status = dealStatusLabel(row.enabled, startsIso, endsIso);
-              const disabledInputs = !row.enabled;
-
-              // ✅ preview: only internal product link OR safe external link
-              const productHref = `/products/${row.product.id}`;
-              const externalHref = normalizeExternalUrl(row.buttonUrl);
-              const previewHref = externalHref || productHref;
+          {/* Variant rows */}
+          <div className="divide-y divide-white/5">
+            {group.rows.map(({ row, index: i }) => {
+              const status = row.enabled
+                ? dealStatus(row.enabled, fromLocalInputValue(row.startsAtLocal), row.endsAtLocal ? fromLocalInputValue(row.endsAtLocal) : null)
+                : { label: "Off", cls: "text-white/40" };
+              const pct = row.variantPrice > 0
+                ? Math.round((1 - poundsToPennies(row.specialPriceGBP) / row.variantPrice) * 100)
+                : 0;
 
               return (
-                <tr key={row.product.id} className="bg-black/20">
-                  {/* Special toggle */}
-                  <td className="px-4 py-4 align-top">
-                    <input
-                      type="checkbox"
-                      checked={row.enabled}
-                      onChange={(e) => setEnabled(idx, e.target.checked)}
-                      className="h-5 w-5"
-                    />
-                    <div className={`mt-2 text-xs ${status.cls}`}>{status.label}</div>
-                    {row.dirty && !row.saving ? (
-                      <div className="mt-1 text-[11px] text-yellow-200/80">Unsaved</div>
-                    ) : null}
-                  </td>
-
-                  {/* Product cell (thumbnail + details) */}
-                  <td className="px-4 py-4 align-top">
-                    <div className="flex items-start gap-3">
-                      <div className="relative h-12 w-12 overflow-hidden rounded-xl border border-white/10 bg-white/5 shrink-0">
-                        {thumbToShow ? (
-                          <Image
-                            src={thumbToShow}
-                            alt={row.product.name}
-                            fill
-                            sizes="48px"
-                            className="object-cover"
-                          />
-                        ) : (
-                          <div className="h-full w-full grid place-items-center text-[10px] text-white/40">
-                            No image
-                          </div>
-                        )}
-                      </div>
-
-                      <div className="min-w-0 flex-1">
-                        <div className="flex items-start justify-between gap-3">
-                          <div className="min-w-0">
-                            <div className="font-semibold text-white truncate">
-                              {row.product.name}
-                            </div>
-                            <div className="text-xs text-white/50 mt-1">
-                              Base: £{penniesToPounds(row.product.price)} · Stock:{" "}
-                              {row.product.stock ?? 0}
-                              {!row.product.isActive ? " · (Inactive product)" : ""}
-                            </div>
-                          </div>
-
-                          <button
-                            type="button"
-                            onClick={() => autoFillFromProduct(idx)}
-                            className="shrink-0 rounded-xl border border-white/10 bg-white/5 px-3 py-2 text-[11px] text-white/80 hover:bg-white/10 transition"
-                          >
-                            Auto-fill
-                          </button>
-                        </div>
-
-                        <div className="mt-3 grid gap-2">
-                          <input
-                            value={row.title}
-                            onChange={(e) => updateRow(idx, { title: e.target.value })}
-                            placeholder="Deal title"
-                            disabled={disabledInputs}
-                            className={[
-                              "w-full rounded-xl border border-white/15 bg-black/40 px-3 py-2 text-xs text-white placeholder:text-white/35 outline-none focus:border-white/30",
-                              disabledInputs ? "opacity-50" : "",
-                            ].join(" ")}
-                          />
-
-                          <textarea
-                            value={row.description}
-                            onChange={(e) => updateRow(idx, { description: e.target.value })}
-                            rows={2}
-                            placeholder="Short description (optional)"
-                            disabled={disabledInputs}
-                            className={[
-                              "w-full rounded-xl border border-white/15 bg-black/40 px-3 py-2 text-xs text-white placeholder:text-white/35 outline-none focus:border-white/30",
-                              disabledInputs ? "opacity-50" : "",
-                            ].join(" ")}
-                          />
-
-                          {/* Override image URL */}
-                          <div className="grid gap-2 sm:grid-cols-[1fr_auto]">
-                            <input
-                              value={row.image}
-                              onChange={(e) => updateRow(idx, { image: e.target.value })}
-                              placeholder="Override image URL (optional)"
-                              disabled={disabledInputs}
-                              className={[
-                                "w-full rounded-xl border border-white/15 bg-black/40 px-3 py-2 text-xs text-white placeholder:text-white/35 outline-none focus:border-white/30",
-                                disabledInputs ? "opacity-50" : "",
-                              ].join(" ")}
-                            />
-                            <button
-                              type="button"
-                              disabled={disabledInputs || !productThumb}
-                              onClick={() => updateRow(idx, { image: productThumb })}
-                              className={[
-                                "rounded-xl border border-white/10 bg-white/5 px-3 py-2 text-[11px] text-white/80 hover:bg-white/10 transition",
-                                disabledInputs || !productThumb
-                                  ? "opacity-50 cursor-not-allowed"
-                                  : "",
-                              ].join(" ")}
-                            >
-                              Use product image
-                            </button>
-                          </div>
-                        </div>
-                      </div>
-                    </div>
-                  </td>
-
-                  {/* Variant label */}
-                  <td className="px-4 py-4 align-top">
-                    <label className="block text-xs font-semibold text-white/60 mb-1">
-                      Variant <span className="font-normal text-white/40">(optional)</span>
+                <div key={`${row.productId}::${row.variantLabel}`} className="px-5 py-4">
+                  <div className="flex items-center gap-4 flex-wrap">
+                    {/* Enable toggle */}
+                    <label className="flex items-center gap-2 cursor-pointer shrink-0">
+                      <input
+                        type="checkbox"
+                        checked={row.enabled}
+                        onChange={(e) => updateRow(i, { enabled: e.target.checked })}
+                        className="h-4 w-4 accent-yellow-400"
+                      />
+                      <span className="text-sm font-semibold text-white/80">
+                        {row.variantLabel || "Whole product"}
+                      </span>
                     </label>
-                    <input
-                      type="text"
-                      value={row.variantLabel}
-                      onChange={(e) => updateRow(idx, { variantLabel: e.target.value })}
-                      disabled={disabledInputs}
-                      placeholder="e.g. 5mg"
-                      className={[
-                        "w-full rounded-xl border border-white/15 bg-black/40 px-3 py-2 text-sm text-white outline-none focus:border-white/30 placeholder:text-white/25",
-                        disabledInputs ? "opacity-50" : "",
-                      ].join(" ")}
-                    />
-                    <div className="mt-1 text-[11px] text-white/40">
-                      Leave blank to apply deal to whole product
-                    </div>
-                  </td>
 
-                  {/* Special price */}
-                  <td className="px-4 py-4 align-top">
-                    <input
-                      value={row.specialPriceGBP}
-                      onChange={(e) => updateRow(idx, { specialPriceGBP: e.target.value })}
-                      inputMode="decimal"
-                      disabled={disabledInputs}
-                      className={[
-                        "w-full rounded-xl border border-white/15 bg-black/40 px-3 py-2 text-sm text-white outline-none focus:border-white/30",
-                        disabledInputs ? "opacity-50" : "",
-                      ].join(" ")}
-                    />
-                    <div className="mt-2 text-xs text-white/45">
-                      Saved as pennies: {poundsToPennies(row.specialPriceGBP)}
-                    </div>
-                    <div className="mt-2 text-[11px] text-white/45">
-                      Quick:{" "}
-                      <button
-                        type="button"
-                        disabled={disabledInputs}
-                        onClick={() =>
-                          updateRow(idx, {
-                            specialPriceGBP: penniesToPounds(
-                              Math.max(0, row.product.price - 100)
-                            ),
-                          })
-                        }
-                        className={[
-                          "underline underline-offset-2 hover:text-white/80",
-                          disabledInputs
-                            ? "opacity-50 cursor-not-allowed no-underline"
-                            : "",
-                        ].join(" ")}
-                      >
-                        −£1.00
-                      </button>
-                      {" · "}
-                      <button
-                        type="button"
-                        disabled={disabledInputs}
-                        onClick={() =>
-                          updateRow(idx, { specialPriceGBP: penniesToPounds(row.product.price) })
-                        }
-                        className={[
-                          "underline underline-offset-2 hover:text-white/80",
-                          disabledInputs
-                            ? "opacity-50 cursor-not-allowed no-underline"
-                            : "",
-                        ].join(" ")}
-                      >
-                        match base
-                      </button>
-                    </div>
-                  </td>
+                    {/* Status badge */}
+                    <span className={`text-xs font-semibold ${status.cls}`}>
+                      {status.label}
+                    </span>
 
-                  {/* Starts */}
-                  <td className="px-4 py-4 align-top">
-                    <input
-                      type="datetime-local"
-                      value={row.startsAtLocal}
-                      onChange={(e) => updateRow(idx, { startsAtLocal: e.target.value })}
-                      disabled={disabledInputs}
-                      className={[
-                        "w-full rounded-xl border border-white/15 bg-black/40 px-3 py-2 text-xs text-white outline-none focus:border-white/30",
-                        disabledInputs ? "opacity-50" : "",
-                      ].join(" ")}
-                    />
-                    <div className="mt-2 text-[11px] text-white/45">
-                      Want it live now? Set a past time.
-                    </div>
-                  </td>
+                    {/* Normal price */}
+                    <span className="text-xs text-white/40">
+                      Normal: £{penniesToPounds(row.variantPrice)}
+                    </span>
 
-                  {/* Ends */}
-                  <td className="px-4 py-4 align-top">
-                    <input
-                      type="datetime-local"
-                      value={row.endsAtLocal}
-                      onChange={(e) => updateRow(idx, { endsAtLocal: e.target.value })}
-                      disabled={disabledInputs}
-                      className={[
-                        "w-full rounded-xl border border-white/15 bg-black/40 px-3 py-2 text-xs text-white outline-none focus:border-white/30",
-                        disabledInputs ? "opacity-50" : "",
-                      ].join(" ")}
-                    />
-                    <div className="mt-2 text-xs text-white/45">
-                      Leave blank for “no end date”.
+                    {/* Special price */}
+                    <div className="flex items-center gap-2">
+                      <span className="text-xs text-white/60">Special price £</span>
+                      <input
+                        type="text"
+                        inputMode="decimal"
+                        value={row.specialPriceGBP}
+                        onChange={(e) => updateRow(i, { specialPriceGBP: e.target.value })}
+                        disabled={!row.enabled}
+                        className="w-24 rounded-lg border border-white/15 bg-black/40 px-2 py-1 text-sm text-white outline-none focus:border-yellow-400/50 disabled:opacity-40"
+                      />
+                      {pct > 0 && row.enabled && (
+                        <span className="text-xs font-bold text-yellow-400">-{pct}%</span>
+                      )}
                     </div>
-                  </td>
 
-                  {/* Perks */}
-                  <td className="px-4 py-4 align-top">
-                    <div className="grid grid-cols-1 gap-2">
-                      {PERKS.map((perk) => (
-                        <label
-                          key={perk}
-                          className={[
-                            "flex items-center gap-2 text-xs text-white/80",
-                            disabledInputs ? "opacity-50" : "",
-                          ].join(" ")}
+                    {/* Starts at */}
+                    <div className="flex items-center gap-2">
+                      <span className="text-xs text-white/60">From</span>
+                      <input
+                        type="datetime-local"
+                        value={row.startsAtLocal}
+                        onChange={(e) => updateRow(i, { startsAtLocal: e.target.value })}
+                        disabled={!row.enabled}
+                        className="rounded-lg border border-white/15 bg-black/40 px-2 py-1 text-xs text-white outline-none focus:border-yellow-400/50 disabled:opacity-40"
+                      />
+                    </div>
+
+                    {/* Ends at */}
+                    <div className="flex items-center gap-2">
+                      <span className="text-xs text-white/60">Until</span>
+                      <input
+                        type="datetime-local"
+                        value={row.endsAtLocal}
+                        onChange={(e) => updateRow(i, { endsAtLocal: e.target.value })}
+                        disabled={!row.enabled}
+                        className="rounded-lg border border-white/15 bg-black/40 px-2 py-1 text-xs text-white outline-none focus:border-yellow-400/50 disabled:opacity-40"
+                      />
+                      {row.endsAtLocal && (
+                        <button
+                          type="button"
+                          onClick={() => updateRow(i, { endsAtLocal: "" })}
+                          className="text-xs text-white/40 hover:text-white/70"
                         >
-                          <input
-                            type="checkbox"
-                            checked={row.perks.has(perk)}
-                            onChange={() => togglePerk(idx, perk)}
-                            disabled={disabledInputs}
-                            className="h-4 w-4"
-                          />
-                          {perk}
-                        </label>
-                      ))}
-                    </div>
-                    <div className="mt-2 text-[11px] text-white/45">
-                      Stored in description as: <span className="italic">Perks: ...</span>
-                    </div>
-                  </td>
-
-                  {/* CTA */}
-                  <td className="px-4 py-4 align-top">
-                    <input
-                      value={row.buttonLabel}
-                      onChange={(e) => updateRow(idx, { buttonLabel: e.target.value })}
-                      placeholder='e.g. "View"'
-                      disabled={disabledInputs}
-                      className={[
-                        "w-full rounded-xl border border-white/15 bg-black/40 px-3 py-2 text-xs text-white outline-none focus:border-white/30",
-                        disabledInputs ? "opacity-50" : "",
-                      ].join(" ")}
-                    />
-
-                    <input
-                      value={row.buttonUrl}
-                      onChange={(e) => updateRow(idx, { buttonUrl: e.target.value })}
-                      placeholder="Optional external link (must start with https://)"
-                      disabled={disabledInputs}
-                      className={[
-                        "mt-2 w-full rounded-xl border border-white/15 bg-black/40 px-3 py-2 text-xs text-white outline-none focus:border-white/30",
-                        disabledInputs ? "opacity-50" : "",
-                      ].join(" ")}
-                    />
-
-                    <div className="mt-2 text-[11px] text-white/45">
-                      If blank: links to /products/&lt;id&gt;. If you type <span className="font-semibold">www.</span> we’ll save it as <span className="font-semibold">https://</span>.
+                          clear
+                        </button>
+                      )}
                     </div>
 
-                    <div className="mt-2">
-                      <a
-                        href={previewHref}
-                        target="_blank"
-                        rel="noreferrer"
-                        className={[
-                          "inline-flex items-center gap-2 rounded-xl border border-white/10 bg-white/5 px-3 py-2 text-[11px] text-white/80 hover:bg-white/10 transition",
-                          disabledInputs ? "pointer-events-none opacity-50" : "",
-                        ].join(" ")}
-                      >
-                        Preview link <span className="text-white/50">↗</span>
-                      </a>
-                      {row.buttonUrl && !externalHref ? (
-                        <div className="mt-2 text-[11px] text-red-300">
-                          External link must start with http:// or https:// (or begin with www.)
-                        </div>
-                      ) : null}
-                    </div>
-                  </td>
-
-                  {/* Action */}
-                  <td className="px-4 py-4 align-top">
+                    {/* Save button */}
                     <button
                       type="button"
-                      onClick={() => saveRow(idx)}
+                      onClick={() => saveRow(i)}
                       disabled={row.saving}
-                      className="w-full rounded-xl bg-yellow-400 text-black px-3 py-2 text-xs font-semibold hover:opacity-90 disabled:opacity-60"
+                      className="rounded-full bg-yellow-400 px-4 py-1.5 text-xs font-bold text-black hover:opacity-90 disabled:opacity-50 shrink-0"
                     >
-                      {row.saving ? "Saving..." : row.dealId ? "Save" : "Create"}
+                      {row.saving ? "Saving…" : "Save"}
                     </button>
 
-                    {row.saved ? (
-                      <div className="mt-2 text-xs text-green-400">Saved</div>
-                    ) : null}
-                    {row.error ? (
-                      <div className="mt-2 text-xs text-red-300">{row.error}</div>
-                    ) : null}
-
-                    <div className="mt-3 text-[11px] text-white/45">
-                      Deal ID:{" "}
-                      <span className="font-mono text-white/60">
-                        {row.dealId ? row.dealId.slice(-8) : "—"}
-                      </span>
-                    </div>
-                  </td>
-                </tr>
+                    {row.saved && <span className="text-xs text-emerald-400 font-semibold">Saved ✓</span>}
+                    {row.error && <span className="text-xs text-red-400">{row.error}</span>}
+                  </div>
+                </div>
               );
             })}
-          </tbody>
-        </table>
-      </div>
-
-      <div className="mt-3 text-xs text-white/40">
-        Notes: your schema requires <span className="font-semibold">startsAt</span> for every deal.
-        If a deal is <span className="font-semibold">enabled</span> and startsAt is in the past (and
-        endsAt is empty or in the future), it will show on the site.
-      </div>
+          </div>
+        </div>
+      ))}
     </div>
   );
 }
