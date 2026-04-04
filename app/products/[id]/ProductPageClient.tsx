@@ -160,9 +160,34 @@ export default function ProductPageClient({
 
             {/* Description */}
             {product.description ? (
-              <p className="mt-4 whitespace-pre-line text-sm leading-relaxed text-black/70">
-                {product.description}
-              </p>
+              <div className="mt-4 space-y-3 text-sm leading-relaxed text-black/70">
+                {product.description.split("\n\n").map((block, i) => {
+                  // Detect molecular/technical data blocks (lines with colons)
+                  const lines = block.split("\n");
+                  const isTechnical = lines.filter(l => l.includes(":")).length >= 2;
+                  if (isTechnical) {
+                    return (
+                      <div key={i} className="rounded-xl border border-black/10 bg-[#F6F8FB] p-3">
+                        {lines.map((line, j) => {
+                          const colonIdx = line.indexOf(":");
+                          if (colonIdx > 0 && colonIdx < 30) {
+                            const label = line.slice(0, colonIdx).trim();
+                            const value = line.slice(colonIdx + 1).trim();
+                            return (
+                              <div key={j} className="flex gap-2 py-0.5 text-xs">
+                                <span className="font-semibold text-black/60 shrink-0 w-32">{label}</span>
+                                <span className="text-black/80">{value}</span>
+                              </div>
+                            );
+                          }
+                          return <p key={j} className="text-xs text-black/60">{line}</p>;
+                        })}
+                      </div>
+                    );
+                  }
+                  return <p key={i} className="whitespace-pre-line">{block}</p>;
+                })}
+              </div>
             ) : (
               <p className="mt-4 text-sm leading-relaxed text-black/60">
                 Research-use product supplied for laboratory and analytical purposes only.

@@ -23,34 +23,39 @@ export default function VariantSelector({ variants, selectedIndex, onChange }: P
         {variants.map((v, i) => {
           const outOfStock = typeof v.stock === "number" && v.stock <= 0;
           const selected = selectedIndex === i;
+
+          let cls = "rounded-full border px-4 py-1.5 text-sm font-semibold transition ";
+
+          if (selected && outOfStock) {
+            cls += "border-rose-500 bg-rose-500 text-white";
+          } else if (selected) {
+            cls += "border-black bg-black text-white";
+          } else if (outOfStock) {
+            cls += "border-black/15 bg-white text-black/35 hover:border-rose-300";
+          } else {
+            cls += "border-black/20 bg-white text-black hover:border-black/50";
+          }
+
           return (
-            <button
-              key={i}
-              type="button"
-              onClick={() => onChange(i)}
-              className={[
-                "rounded-full border px-4 py-1.5 text-sm font-semibold transition relative",
-                selected
-                  ? "border-black bg-black text-white"
-                  : outOfStock
-                  ? "border-black/15 bg-white text-black/35 cursor-pointer"
-                  : "border-black/20 bg-white text-black hover:border-black/50",
-              ].join(" ")}
-            >
-              {outOfStock && !selected ? (
+            <button key={i} type="button" onClick={() => onChange(i)} className={cls}>
+              {outOfStock ? (
                 <span className="line-through">{v.label}</span>
               ) : (
                 v.label
-              )}
-              {outOfStock && (
-                <span className="ml-1 text-[10px] font-normal text-black/40">
-                  {selected ? "· back order" : ""}
-                </span>
               )}
             </button>
           );
         })}
       </div>
+      {(() => {
+        const sel = variants[selectedIndex];
+        const outOfStock = sel && typeof sel.stock === "number" && sel.stock <= 0;
+        return outOfStock ? (
+          <p className="mt-1.5 text-xs text-rose-600 font-medium">
+            This size is out of stock — you can still place a back order.
+          </p>
+        ) : null;
+      })()}
     </div>
   );
 }
