@@ -282,6 +282,41 @@ export default function DealsManager({ products, dealsByKey }: Props) {
                       )}
                     </div>
 
+                    {/* Quick % buttons */}
+                    {row.enabled && (
+                      <div className="flex items-center gap-1 flex-wrap">
+                        {[5, 10, 15, 20, 25, 30].map((p) => (
+                          <button
+                            key={p}
+                            type="button"
+                            onClick={() => {
+                              const discounted = Math.round(row.variantPrice * (1 - p / 100));
+                              updateRow(i, { specialPriceGBP: (discounted / 100).toFixed(2) });
+                            }}
+                            className="rounded-full border border-yellow-400/30 bg-yellow-400/10 px-2 py-0.5 text-[11px] font-bold text-yellow-300 hover:bg-yellow-400/20"
+                          >
+                            -{p}%
+                          </button>
+                        ))}
+                        <span className="text-white/30 text-xs mx-1">or</span>
+                        <input
+                          type="number"
+                          min="0"
+                          max="99"
+                          placeholder="%"
+                          className="w-14 rounded-lg border border-white/15 bg-black/40 px-2 py-0.5 text-xs text-white outline-none focus:border-yellow-400/50"
+                          onBlur={(e) => {
+                            const p = parseFloat(e.target.value);
+                            if (!Number.isFinite(p) || p <= 0 || p >= 100) return;
+                            const discounted = Math.round(row.variantPrice * (1 - p / 100));
+                            updateRow(i, { specialPriceGBP: (discounted / 100).toFixed(2) });
+                            e.target.value = "";
+                          }}
+                        />
+                        <span className="text-white/40 text-xs">% off</span>
+                      </div>
+                    )}
+
                     {/* Starts at */}
                     <div className="flex items-center gap-2">
                       <span className="text-xs text-white/60">From</span>
