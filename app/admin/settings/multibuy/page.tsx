@@ -5,9 +5,9 @@ import { useEffect, useState } from "react";
 type Tier = { spendPennies: number; pct: number };
 
 const DEFAULT: Tier[] = [
-  { spendPennies: 5000,  pct: 5  },
-  { spendPennies: 10000, pct: 10 },
-  { spendPennies: 15000, pct: 15 },
+  { spendPennies: 5000,  pct: 10 },
+  { spendPennies: 15000, pct: 20 },
+  { spendPennies: 50000, pct: 30 },
 ];
 
 function penniesTo(p: number) { return (p / 100).toFixed(2); }

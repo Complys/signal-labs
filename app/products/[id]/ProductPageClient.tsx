@@ -151,6 +151,9 @@ export default function ProductPageClient({
                   {formatGBPFromPennies(displayPricePennies)}
                 </p>
               )}
+              <p className="mt-1 text-xs text-emerald-700 font-semibold">
+                With offer (spend £500+): {formatGBPFromPennies(Math.round(displayPricePennies * 0.7))}
+              </p>
               {dealEndsAt ? (
                 <div className="mt-2">
                   <DealCountdown endsAtIso={dealEndsAt} className="text-xs text-black/60" />

@@ -20,7 +20,6 @@ export default function MultiBuyBanner({ cartPennies = 0 }: { cartPennies?: numb
 
   if (!tiers.length) return null;
 
-  // Find the next tier the customer hasn't hit yet
   const sorted = [...tiers].sort((a, b) => a.spendPennies - b.spendPennies);
   const activeTier = sorted.filter((t) => cartPennies >= t.spendPennies).at(-1);
   const nextTier = sorted.find((t) => cartPennies < t.spendPennies);
@@ -32,7 +31,6 @@ export default function MultiBuyBanner({ cartPennies = 0 }: { cartPennies?: numb
         Multi-buy discounts
       </div>
 
-      {/* Tier list */}
       <div className="space-y-1 mb-3">
         {sorted.map((t) => {
           const hit = cartPennies >= t.spendPennies;
@@ -49,7 +47,6 @@ export default function MultiBuyBanner({ cartPennies = 0 }: { cartPennies?: numb
         })}
       </div>
 
-      {/* Progress message */}
       {activeTier ? (
         <p className="text-xs font-semibold text-emerald-700">
           {activeTier.pct}% discount applied to your order.

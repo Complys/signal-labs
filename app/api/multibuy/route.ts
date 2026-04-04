@@ -4,9 +4,9 @@ import { prisma } from "@/lib/prisma";
 export const revalidate = 60;
 
 const DEFAULT_TIERS = [
-  { spendPennies: 5000,  pct: 5  },
-  { spendPennies: 10000, pct: 10 },
-  { spendPennies: 15000, pct: 15 },
+  { spendPennies: 5000,  pct: 10 },
+  { spendPennies: 15000, pct: 20 },
+  { spendPennies: 50000, pct: 30 },
 ];
 
 export async function GET() {

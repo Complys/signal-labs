@@ -144,11 +144,15 @@ export default function ProductCard({
         {/* Price */}
         <div className="mt-2">
           {hasVariants ? (
-            <div className="text-sm font-semibold">
-              {selectedVariant ? fmt(selectedVariant.pricePennies) : `From ${fmt(fromPrice)}`}
-              {!selectedVariant && (
-                <span className="text-xs text-black/50 font-normal ml-1">— select size</span>
-              )}
+            <div>
+              <div className="text-sm font-semibold">
+                {selectedVariant ? fmt(selectedVariant.pricePennies) : `From ${fmt(fromPrice)}`}
+              </div>
+              <div className="text-[11px] text-emerald-700 font-semibold mt-0.5">
+                With offer: {selectedVariant
+                  ? `${fmt(Math.round(selectedVariant.pricePennies * 0.7))}`
+                  : `From ${fmt(Math.round(fromPrice * 0.7))}`}
+              </div>
             </div>
           ) : reduced && effectiveDealPennies ? (
             <div className="leading-tight">
@@ -158,7 +162,12 @@ export default function ProductCard({
               <div className="text-[11px] text-black/50 line-through">{fmt(basePennies)}</div>
             </div>
           ) : (
-            <div className="text-sm font-semibold">{fmt(basePennies)}</div>
+            <div>
+              <div className="text-sm font-semibold">{fmt(basePennies)}</div>
+              <div className="text-[11px] text-emerald-700 font-semibold mt-0.5">
+                With offer: {fmt(Math.round(basePennies * 0.7))}
+              </div>
+            </div>
           )}
         </div>
 
