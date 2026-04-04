@@ -74,7 +74,16 @@ type DealRow = {
 };
 
 function getDealPricing(d: DealRow) {
-  const basePennies = safeIntPennies(d?.product?.price);
+  // If this deal is for a specific variant, use the variant price as base
+  let basePennies = safeIntPennies(d?.product?.price);
+  const variantLabel = (d as any).variantLabel?.trim() || null;
+  if (variantLabel && (d as any).product?.variantsJson) {
+    try {
+      const variants = JSON.parse((d as any).product.variantsJson);
+      const match = variants.find((v: any) => v.label === variantLabel);
+      if (match?.pricePennies) basePennies = match.pricePennies;
+    } catch {}
+  }
   const dealPennies = safeIntPennies(d?.specialPrice);
 
   const canPrice = basePennies !== null && basePennies > 0;
@@ -466,6 +475,7 @@ export default async function WeeklySpecialsSection({
           image: true,
           stock: true,
           isActive: true,
+          variantsJson: true,
         },
       },
     },
