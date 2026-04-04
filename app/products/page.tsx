@@ -109,11 +109,11 @@ export default async function ProductsPage({
           }
         : {}),
     },
-    orderBy: sort === "za" ? { name: "desc" } :
-               sort === "price_asc" ? { price: "asc" } :
-               sort === "price_desc" ? { price: "desc" } :
-               sort === "newest" ? { createdAt: "desc" } :
-               { name: "asc" },
+    orderBy: sort === "za" ? [{ name: "desc" }] :
+               sort === "price_asc" ? [{ price: "asc" }] :
+               sort === "price_desc" ? [{ price: "desc" }] :
+               sort === "newest" ? [{ createdAt: "desc" }] :
+               [{ name: "asc" }],
     include: {
       deals: {
         where: {
@@ -186,7 +186,6 @@ export default async function ProductsPage({
                 name="sort"
                 defaultValue={sort}
                 className="rounded-2xl border border-black/15 bg-white px-3 py-3 text-sm outline-none focus:border-black/30"
-                onChange={(e) => (e.target.form as HTMLFormElement)?.submit()}
               >
                 <option value="az">A — Z</option>
                 <option value="za">Z — A</option>
