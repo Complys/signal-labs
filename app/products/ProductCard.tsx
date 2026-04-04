@@ -55,6 +55,11 @@ export default function ProductCard({
     : product.stock;
   const effectiveIsBackOrder = effectiveStock <= 0;
 
+  // Only show back order badge on image if ALL variants are out of stock
+  const allOutOfStock = hasVariants
+    ? variants.every((v) => typeof (v as any).stock === "number" && (v as any).stock <= 0)
+    : isBackOrder;
+
   // Effective price
   const effectiveBasePennies = selectedVariant ? selectedVariant.pricePennies : basePennies;
   const effectiveDealPennies = !hasVariants && reduced && dealPennies ? dealPennies : null;
@@ -85,7 +90,7 @@ export default function ProductCard({
               -{pct}%
             </div>
           )}
-          {effectiveIsBackOrder && (
+          {allOutOfStock && (
             <div className="absolute bottom-3 left-3 z-20 rounded-full bg-amber-500 px-3 py-1 text-[11px] font-semibold text-white">
               Back order
             </div>
@@ -192,9 +197,9 @@ export default function ProductCard({
         )}
 
         {effectiveIsBackOrder && !isAdmin && (
-          <div className="mt-3">
-            <StockNotifyButton productId={product.id} />
-          </div>
+          <p className="mt-1.5 text-[11px] text-amber-700 font-medium">
+            This size — back order, est. 10–15 days.
+          </p>
         )}
       </div>
     </div>
