@@ -123,10 +123,18 @@ function getProductBasics(d: DealRow) {
 
   const image = (variantSpecificImage || d.image || product?.image || "").trim();
 
-  const stock = typeof product?.stock === "number" ? product.stock : 0;
-  const isBackOrder = stock <= 0;
+  let stock = typeof product?.stock === "number" ? product.stock : 0;
 
-  // match /products: cap qty when stock > 0 else allow up to 999
+  // If variant-specific deal, use variant stock
+  if (variantLabel && (d as any).product?.variantsJson) {
+    try {
+      const variants = JSON.parse((d as any).product.variantsJson);
+      const match = variants.find((v: any) => v.label === variantLabel);
+      if (typeof match?.stock === "number") stock = match.stock;
+    } catch {}
+  }
+
+  const isBackOrder = stock <= 0;
   const maxQty = stock > 0 ? stock : 999;
 
   return { productId, productName, description, image, titleText, stock, isBackOrder, maxQty };

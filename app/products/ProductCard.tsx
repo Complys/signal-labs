@@ -81,7 +81,7 @@ export default function ProductCard({
   ].join(" ");
 
   return (
-    <div className={cardCls}>
+    <div className={cardCls} style={{isolation: "isolate"}}>
       {/* Clickable image */}
       <Link href={`/products/${product.id}`} className="block">
         <div className="relative aspect-square w-full bg-black/[0.03]">
@@ -107,7 +107,7 @@ export default function ProductCard({
           )}
 
           {/* Offer price badge — top right corner */}
-          <div className="absolute top-0 right-0 z-20 bg-emerald-600 text-white rounded-bl-2xl px-3 py-2 text-center">
+          <div className="absolute top-0 right-0 z-[1] bg-emerald-600 text-white rounded-bl-2xl px-3 py-2 text-center">
             <div className="text-[10px] font-bold uppercase tracking-wide leading-none">With offer</div>
             <div className="text-sm font-extrabold leading-tight mt-0.5">
               {hasVariants
