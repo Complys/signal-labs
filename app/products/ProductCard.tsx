@@ -49,6 +49,12 @@ export default function ProductCard({
   const [selectedIndex, setSelectedIndex] = useState(0);
   const selectedVariant = hasVariants ? variants[selectedIndex] : null;
 
+  // Per-variant stock
+  const effectiveStock = hasVariants && selectedVariant && typeof (selectedVariant as any).stock === "number"
+    ? (selectedVariant as any).stock
+    : product.stock;
+  const effectiveIsBackOrder = effectiveStock <= 0;
+
   // Effective price
   const effectiveBasePennies = selectedVariant ? selectedVariant.pricePennies : basePennies;
   const effectiveDealPennies = !hasVariants && reduced && dealPennies ? dealPennies : null;
@@ -79,7 +85,7 @@ export default function ProductCard({
               -{pct}%
             </div>
           )}
-          {isBackOrder && (
+          {effectiveIsBackOrder && (
             <div className="absolute bottom-3 left-3 z-20 rounded-full bg-black px-3 py-1 text-[11px] font-semibold text-white">
               Back order
             </div>
@@ -177,7 +183,7 @@ export default function ProductCard({
           </div>
         )}
 
-        {isBackOrder && !isAdmin && (
+        {effectiveIsBackOrder && !isAdmin && (
           <div className="mt-3">
             <StockNotifyButton productId={product.id} />
           </div>

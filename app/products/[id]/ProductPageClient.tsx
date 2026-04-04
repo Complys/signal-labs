@@ -49,16 +49,21 @@ export default function ProductPageClient({
   const hasVariants = variants.length > 0;
   const selectedVariant = hasVariants ? variants[selectedVariantIndex] : null;
 
+  // Use per-variant stock if available, otherwise fall back to product stock
+  const effectiveStock = hasVariants && selectedVariant && typeof (selectedVariant as any).stock === "number"
+    ? (selectedVariant as any).stock
+    : stock;
+  const effectiveIsBackOrder = effectiveStock <= 0;
+
   const effectiveBasePennies = selectedVariant ? selectedVariant.pricePennies : basePennies;
   const effectiveDealPennies = !hasVariants && reduced && dealPennies ? dealPennies : null;
+  const maxQty = effectiveStock > 0 ? effectiveStock : 999;
   const showReduced = !!effectiveDealPennies;
   const displayPricePennies = effectiveDealPennies ?? effectiveBasePennies;
 
   // Image: use variant image if set, otherwise fall back to product image
   const displayImage =
     (selectedVariant?.image) || product.image || null;
-
-  const maxQty = stock > 0 ? stock : 999;
 
   return (
     <main className="min-h-screen bg-[#F6F8FB] px-6 py-10 text-[#0B1220]">
@@ -83,12 +88,12 @@ export default function ProductPageClient({
             <span
               className={[
                 "rounded-full px-3 py-1 text-xs font-medium ring-1 ring-inset",
-                isBackOrder
+                effectiveIsBackOrder
                   ? "bg-rose-50 text-rose-700 ring-rose-100"
                   : "bg-emerald-50 text-emerald-700 ring-emerald-100",
               ].join(" ")}
             >
-              {isBackOrder ? "Out of stock" : "In stock"}
+              {effectiveIsBackOrder ? "Out of stock" : "In stock"}
             </span>
           </div>
         </div>
@@ -169,9 +174,9 @@ export default function ProductPageClient({
               <ProductsPurchaseActions
                 productId={String(product.id)}
                 dealId={!hasVariants ? dealId : null}
-                isBackOrder={product.isActive === false ? true : isBackOrder}
+                isBackOrder={product.isActive === false ? true : effectiveIsBackOrder}
                 maxQty={maxQty}
-                stock={stock}
+                stock={effectiveStock}
                 name={hasVariants && selectedVariant ? `${product.name} — ${selectedVariant.label}` : product.name}
                 unitPricePennies={displayPricePennies}
                 image={displayImage}
