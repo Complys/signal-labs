@@ -16,7 +16,7 @@ type Defaults = {
   stock: string;
   image: string;
   isActive: boolean;
-  variants: Array<{ label: string; pricePennies: number; image?: string }>;
+  variants: Array<{ label: string; pricePennies: number; costPennies?: number; stock?: number; image?: string }>;
 
   // Weekly Specials / Deals
   onSpecial: boolean;
@@ -104,9 +104,12 @@ export default function EditProductForm({
   const [specialLive, setSpecialLive] = useState(defaults.specialPrice);
   const [onSpecialLive, setOnSpecialLive] = useState(defaults.onSpecial);
   const [percentLive, setPercentLive] = useState<string>("");
-  const [variants, setVariants] = useState<Array<{ label: string; pricePennies: number; image?: string; stock?: number }>>(defaults.variants ?? []);
+  const [variants, setVariants] = useState<Array<{ label: string; pricePennies: number; costPennies?: number; stock?: number; image?: string }>>(defaults.variants ?? []);
   const [variantPriceRaw, setVariantPriceRaw] = useState<string[]>(
     () => (defaults.variants ?? []).map((v) => (v.pricePennies / 100).toFixed(2))
+  );
+  const [variantCostRaw, setVariantCostRaw] = useState<string[]>(
+    () => (defaults.variants ?? []).map((v) => ((v.costPennies ?? 0) / 100).toFixed(2))
   );
 
   const [variantUploading, setVariantUploading] = useState<number | null>(null);
@@ -152,6 +155,7 @@ export default function EditProductForm({
   function removeVariant(i: number) {
     setVariants((v) => v.filter((_, idx) => idx !== i));
     setVariantPriceRaw((r) => r.filter((_, idx) => idx !== i));
+    setVariantCostRaw((r) => r.filter((_, idx) => idx !== i));
   }
   function updateVariant(i: number, field: string, val: string) {
     setVariants((v) => v.map((item, idx) => {
@@ -559,24 +563,59 @@ export default function EditProductForm({
                     setVariantPriceRaw((r) => r.map((x, idx) => idx === i ? val : x));
                   }}
                   onBlur={(e) => {
-                    const val = e.target.value;
-                    setVariantPriceRaw((r) => r.map((x, idx) => idx === i ? val : x));
-                    updateVariant(i, "pricePennies", val);
+                    updateVariant(i, "pricePennies", variantPriceRaw[i] ?? "0");
                   }}
                   className="w-28 rounded-xl bg-black/30 border border-white/10 px-3 py-2 text-sm text-white outline-none focus:border-white/20"
                 />
-                <input
-                  type="text"
-                  inputMode="numeric"
-                  placeholder="Stock"
-                  value={String(v.stock ?? 0)}
-                  onChange={(e) => setVariants((prev) => prev.map((item, idx) =>
-                    idx !== i ? item : { ...item, stock: parseInt(e.target.value) || 0 }
-                  ))}
-                  className="w-20 rounded-xl bg-black/30 border border-white/10 px-3 py-2 text-sm text-white outline-none focus:border-white/20"
-                  title="Stock for this variant"
-                />
                 <button type="button" onClick={() => removeVariant(i)} className="text-red-400 hover:text-red-300 text-xl leading-none px-1">×</button>
+              </div>
+
+              {/* Cost, Stock, P&L */}
+              <div className="grid grid-cols-3 gap-2">
+                <div>
+                  <div className="text-[10px] text-white/40 mb-1">Cost (£)</div>
+                  <input
+                    type="text"
+                    inputMode="decimal"
+                    placeholder="0.00"
+                    value={variantCostRaw[i] ?? "0.00"}
+                    onChange={(e) => {
+                      const val = e.target.value;
+                      setVariantCostRaw((r) => r.map((x, idx) => idx === i ? val : x));
+                    }}
+                    onBlur={() => {
+                      const pennies = Math.round(parseFloat(variantCostRaw[i]?.replace(/[^0-9.]/g,"") || "0") * 100) || 0;
+                      setVariants((prev) => prev.map((item, idx) => idx !== i ? item : { ...item, costPennies: pennies }));
+                    }}
+                    className="w-full rounded-xl bg-black/30 border border-white/10 px-3 py-2 text-sm text-white outline-none focus:border-white/20"
+                  />
+                </div>
+                <div>
+                  <div className="text-[10px] text-white/40 mb-1">Stock</div>
+                  <input
+                    type="text"
+                    inputMode="numeric"
+                    placeholder="0"
+                    value={String(v.stock ?? 0)}
+                    onChange={(e) => setVariants((prev) => prev.map((item, idx) =>
+                      idx !== i ? item : { ...item, stock: parseInt(e.target.value) || 0 }
+                    ))}
+                    className="w-full rounded-xl bg-black/30 border border-white/10 px-3 py-2 text-sm text-white outline-none focus:border-white/20"
+                  />
+                </div>
+                <div>
+                  <div className="text-[10px] text-white/40 mb-1">Margin</div>
+                  <div className="rounded-xl bg-black/30 border border-white/10 px-3 py-2 text-sm font-bold">
+                    {(() => {
+                      const sell = v.pricePennies;
+                      const cost = v.costPennies ?? 0;
+                      if (!sell || sell <= 0) return <span className="text-white/30">—</span>;
+                      if (!cost || cost <= 0) return <span className="text-white/30">—</span>;
+                      const margin = Math.round(((sell - cost) / sell) * 100);
+                      return <span className={margin >= 30 ? "text-emerald-400" : margin >= 10 ? "text-yellow-300" : "text-orange-400"}>{margin}%</span>;
+                    })()}
+                  </div>
+                </div>
               </div>
 
               {/* Image uploader */}
