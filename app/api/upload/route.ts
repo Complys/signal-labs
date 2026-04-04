@@ -1,6 +1,5 @@
 import { NextResponse } from "next/server";
-import path from "path";
-import fs from "fs/promises";
+import { put } from "@vercel/blob";
 import crypto from "crypto";
 
 export const runtime = "nodejs";
@@ -18,7 +17,6 @@ export async function POST(req: Request) {
       return NextResponse.json({ error: "Missing file" }, { status: 400 });
     }
 
-    // file is a Blob (File) in Next runtime
     const f = file as File;
 
     if (!ALLOWED.has(f.type)) {
@@ -33,16 +31,15 @@ export async function POST(req: Request) {
       f.type === "image/jpeg" ? "jpg" :
       "webp";
 
+    const filename = `products/${crypto.randomBytes(16).toString("hex")}.${ext}`;
     const bytes = Buffer.from(await f.arrayBuffer());
-    const filename = `${crypto.randomBytes(16).toString("hex")}.${ext}`;
 
-    const uploadsDir = path.join(process.cwd(), "public", "uploads");
-    await fs.mkdir(uploadsDir, { recursive: true });
+    const blob = await put(filename, bytes, {
+      access: "public",
+      contentType: f.type,
+    });
 
-    const fullPath = path.join(uploadsDir, filename);
-    await fs.writeFile(fullPath, bytes);
-
-    return NextResponse.json({ url: `/uploads/${filename}` });
+    return NextResponse.json({ url: blob.url });
   } catch (err: any) {
     console.error("Upload error:", err);
     return NextResponse.json({ error: "Upload failed" }, { status: 500 });
