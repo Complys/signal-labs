@@ -46,7 +46,11 @@ export default function ProductCard({
   } catch {}
 
   const hasVariants = variants.length > 0;
-  const [selectedIndex, setSelectedIndex] = useState(0);
+  // Default to first in-stock variant, fall back to 0
+  const defaultIndex = variants.findIndex(
+    (v) => typeof (v as any).stock !== "number" || (v as any).stock > 0
+  );
+  const [selectedIndex, setSelectedIndex] = useState(defaultIndex >= 0 ? defaultIndex : 0);
   const selectedVariant = hasVariants ? variants[selectedIndex] : null;
 
   // Per-variant stock
