@@ -102,7 +102,7 @@ export default function ProductPageClient({
         <div className="grid gap-8 lg:grid-cols-2">
           {/* Image card */}
           <div className="overflow-hidden rounded-3xl border border-black/10 bg-white shadow-sm">
-            <div className="relative aspect-[4/3] w-full bg-[#F6F8FB]">
+            <div className="relative w-full bg-white" style={{aspectRatio: "3/4"}}>
               {displayImage ? (
                 <Image
                   key={displayImage}
@@ -110,7 +110,7 @@ export default function ProductPageClient({
                   alt={product.name}
                   fill
                   priority
-                  className="object-cover transition-opacity duration-200"
+                  className="object-contain transition-opacity duration-200 p-6"
                   sizes="(max-width: 1024px) 100vw, 50vw"
                 />
               ) : (
