@@ -488,7 +488,8 @@ export default function EditProductForm({
                   step="0.01"
                   min="0"
                   placeholder="Price £"
-                  defaultValue={(v.pricePennies / 100).toFixed(2)}
+                  value={(v.pricePennies / 100).toFixed(2)}
+                  onChange={(e) => updateVariant(i, "pricePennies", e.target.value)}
                   onBlur={(e) => updateVariant(i, "pricePennies", e.target.value)}
                   className="w-28 rounded-xl bg-black/30 border border-white/10 px-3 py-2 text-sm text-white outline-none focus:border-white/20"
                 />
