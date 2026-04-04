@@ -1,13 +1,11 @@
 // web/app/products/page.tsx
-import Image from "next/image";
 import Link from "next/link";
 import { cookies, headers } from "next/headers";
 import { prisma } from "@/lib/prisma";
 
 import WeeklySpecialsSection from "@/app/_components/WeeklySpecialsSection";
-import StockNotifyButton from "@/app/_components/StockNotifyButton";
-import DealCountdown from "@/app/_components/DealCountdown";
-import ProductsPurchaseActions from "@/app/_components/ProductsPurchaseActions";
+import ProductCard from "@/app/products/ProductCard";
+
 
 export const dynamic = "force-dynamic";
 export const runtime = "nodejs";
@@ -221,135 +219,39 @@ export default async function ProductsPage({
         ) : (
           <div className="grid grid-cols-2 gap-4 sm:grid-cols-3 lg:grid-cols-4">
             {products.map((p) => {
-              const idStr = String(p.id);
-
               const stock = typeof p.stock === "number" ? p.stock : 0;
               const isBackOrder = stock <= 0;
-
               const isInactive = p.isActive === false;
               const disabled = !isAdmin && isInactive;
-
-              // Cap qty when stock is positive, otherwise allow up to 999 (backorder)
               const maxQty = stock > 0 ? stock : 999;
-
               const activeDeal = p.deals?.[0] ?? null;
-
               const basePennies = penniesFrom(p.price);
-              const dealPennies =
-                activeDeal?.specialPrice == null ? null : penniesFrom(activeDeal.specialPrice);
-
-              const reduced =
-                typeof dealPennies === "number" &&
-                dealPennies > 0 &&
-                dealPennies < basePennies;
-
+              const dealPennies = activeDeal?.specialPrice == null ? null : penniesFrom(activeDeal.specialPrice);
+              const reduced = typeof dealPennies === "number" && dealPennies > 0 && dealPennies < basePennies;
               const pct = reduced && dealPennies ? pctOffPennies(basePennies, dealPennies) : 0;
-              const unitPricePennies = reduced && dealPennies ? dealPennies : basePennies;
-
-              const cardCls = [
-                "group overflow-hidden rounded-2xl bg-white shadow-sm transition hover:shadow-md",
-                reduced ? "border-2 border-green-500/60" : "border border-black/10",
-                isAdmin && isInactive ? "opacity-70" : "",
-              ].join(" ");
 
               return (
-                <div key={idStr} className={cardCls}>
-                  <div className="relative aspect-square w-full bg-black/[0.03]">
-                    {reduced ? (
-                      <div className="absolute right-3 top-3 z-20 rounded-full bg-green-600 px-3 py-1 text-[11px] font-extrabold text-white shadow">
-                        On Sale
-                      </div>
-                    ) : null}
-
-                    {reduced && pct > 0 ? (
-                      <div className="absolute left-3 top-3 z-20 rounded-full bg-green-600 px-4 py-2 text-[12px] font-extrabold text-white shadow sm:text-[13px]">
-                        -{pct}%
-                      </div>
-                    ) : null}
-
-                    {isBackOrder ? (
-                      <div className="absolute bottom-3 left-3 z-20 rounded-full bg-black px-3 py-1 text-[11px] font-semibold text-white">
-                        Back order
-                      </div>
-                    ) : null}
-
-                    {isAdmin && isInactive ? (
-                      <div className="absolute bottom-3 right-3 z-20 rounded-full bg-red-600 px-3 py-1 text-[11px] font-semibold text-white">
-                        Inactive
-                      </div>
-                    ) : null}
-
-                    {p.image ? (
-                      <Image
-                        src={p.image}
-                        alt={p.name}
-                        fill
-                        sizes="(max-width:640px) 50vw, (max-width:1024px) 33vw, 25vw"
-                        className="object-cover"
-                      />
-                    ) : (
-                      <div className="absolute inset-0 flex items-center justify-center text-xs text-black/45">
-                        No Image
-                      </div>
-                    )}
-                  </div>
-
-                  <div className="p-3 sm:p-4">
-                    <div className="line-clamp-2 text-sm font-medium leading-snug">
-                      {p.name}
-                    </div>
-
-                    {/* Price */}
-                    <div className="mt-3">
-                      {reduced && typeof dealPennies === "number" ? (
-                        <div className="leading-tight">
-                          <div className="text-sm font-extrabold text-black sm:text-base">
-                            {formatGBPFromPennies(dealPennies)}
-                          </div>
-                          <div className="text-[11px] text-black/50 line-through">
-                            {formatGBPFromPennies(basePennies)}
-                          </div>
-                        </div>
-                      ) : (
-                        <div className="text-sm font-semibold">
-                          {formatGBPFromPennies(basePennies)}
-                        </div>
-                      )}
-                    </div>
-
-                    {/* Actions (Client Component) */}
-                    <div className="mt-4">
-  <ProductsPurchaseActions
-    productId={idStr}
-    dealId={activeDeal?.id ?? null}
-    isBackOrder={isBackOrder}
-    disabled={disabled}
-    maxQty={maxQty}
-    name={p.name}
-    unitPricePennies={unitPricePennies}
-    image={p.image ?? null}
-  />
-</div>
-
-                    {activeDeal?.endsAt ? (
-                      <div className="mt-2">
-                        <DealCountdown
-                          endsAtIso={new Date(activeDeal.endsAt).toISOString()}
-                          className="text-[11px] text-black/60"
-                        />
-                      </div>
-                    ) : null}
-
-                    {isBackOrder && !isAdmin ? (
-                      <div className="mt-3">
-                        <StockNotifyButton productId={idStr} />
-                      </div>
-                    ) : null}
-                    <p className="mt-3 text-[11px] text-black/50">
-                      {isBackOrder ? "Back order" : `Stock: ${stock}`}
-                    </p>
-                  </div>
-                </div>
+                <ProductCard
+                  key={String(p.id)}
+                  product={{
+                    id: String(p.id),
+                    name: p.name,
+                    image: p.image ?? null,
+                    stock,
+                    isActive: p.isActive,
+                    variantsJson: (p as any).variantsJson ?? null,
+                  }}
+                  basePennies={basePennies}
+                  dealId={activeDeal?.id ?? null}
+                  dealEndsAt={activeDeal?.endsAt ? new Date(activeDeal.endsAt).toISOString() : null}
+                  reduced={reduced}
+                  dealPennies={dealPennies}
+                  pct={pct}
+                  isAdmin={isAdmin}
+                  isBackOrder={isBackOrder}
+                  disabled={disabled}
+                  maxQty={maxQty}
+                />
               );
             })}
           </div>

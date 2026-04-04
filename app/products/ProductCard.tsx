@@ -1,7 +1,13 @@
 "use client";
 
 import Image from "next/image";
-import ProductQuickActions from "@/app/_components/ProductQuickActions";
+import Link from "next/link";
+import { useState } from "react";
+import ProductsPurchaseActions from "@/app/_components/ProductsPurchaseActions";
+import DealCountdown from "@/app/_components/DealCountdown";
+import StockNotifyButton from "@/app/_components/StockNotifyButton";
+
+type Variant = { label: string; pricePennies: number; image?: string };
 
 type Props = {
   product: {
@@ -9,99 +15,173 @@ type Props = {
     name: string;
     image?: string | null;
     stock: number;
+    isActive: boolean;
+    variantsJson?: string | null;
   };
-
-  // pricing
-  unitPricePennies: number;
-
-  // deal context
+  basePennies: number;
   dealId: string | null;
-  showWeeklySpecialBadge?: boolean;
-  showOnSaleBadge?: boolean;
-  percentOff?: number | null;
-
-  // permissions / state
-  canView: boolean;
-  maxQty?: number;
+  dealEndsAt: string | null;
+  reduced: boolean;
+  dealPennies: number | null;
+  pct: number;
+  isAdmin: boolean;
+  isBackOrder: boolean;
+  disabled: boolean;
+  maxQty: number;
 };
 
+function fmt(p: number) { return `£${(p / 100).toFixed(2)}`; }
+
 export default function ProductCard({
-  product,
-  unitPricePennies,
-  dealId,
-  showWeeklySpecialBadge,
-  showOnSaleBadge,
-  percentOff,
-  canView,
-  maxQty = 10,
+  product, basePennies, dealId, dealEndsAt, reduced, dealPennies, pct,
+  isAdmin, isBackOrder, disabled, maxQty,
 }: Props) {
-  const isBackOrder = product.stock <= 0;
+  // Parse variants
+  let variants: Variant[] = [];
+  try {
+    if (product.variantsJson) {
+      const parsed = JSON.parse(product.variantsJson);
+      if (Array.isArray(parsed) && parsed.length > 0) variants = parsed;
+    }
+  } catch {}
+
+  const hasVariants = variants.length > 0;
+  const [selectedIndex, setSelectedIndex] = useState(0);
+  const selectedVariant = hasVariants ? variants[selectedIndex] : null;
+
+  // Effective price
+  const effectiveBasePennies = selectedVariant ? selectedVariant.pricePennies : basePennies;
+  const effectiveDealPennies = !hasVariants && reduced && dealPennies ? dealPennies : null;
+  const displayPrice = effectiveDealPennies ?? effectiveBasePennies;
+  const fromPrice = hasVariants ? Math.min(...variants.map(v => v.pricePennies)) : basePennies;
+
+  // Effective image
+  const displayImage = selectedVariant?.image || product.image || null;
+
+  const cardCls = [
+    "group overflow-hidden rounded-2xl bg-white shadow-sm transition hover:shadow-md",
+    reduced ? "border-2 border-green-500/60" : "border border-black/10",
+    isAdmin && !product.isActive ? "opacity-70" : "",
+  ].join(" ");
 
   return (
-    <div className="rounded-2xl border bg-white shadow-sm overflow-hidden">
-      <div className="relative aspect-[4/3] bg-black/5">
-        {product.image ? (
-          <Image
-            src={product.image}
-            alt={product.name}
-            fill
-            className="object-cover"
-            sizes="(max-width: 768px) 100vw, 33vw"
-          />
-        ) : null}
-
-        <div className="absolute left-3 top-3 flex gap-2">
-          {showWeeklySpecialBadge ? (
-            <span className="rounded-full bg-black text-white px-3 py-1 text-xs font-semibold">
-              Weekly Special
-            </span>
-          ) : null}
-
-          {showOnSaleBadge ? (
-            <span className="rounded-full bg-green-600 text-white px-3 py-1 text-xs font-semibold">
+    <div className={cardCls}>
+      {/* Clickable image */}
+      <Link href={`/products/${product.id}`} className="block">
+        <div className="relative aspect-square w-full bg-black/[0.03]">
+          {reduced && (
+            <div className="absolute right-3 top-3 z-20 rounded-full bg-green-600 px-3 py-1 text-[11px] font-extrabold text-white shadow">
               On Sale
-            </span>
-          ) : null}
-        </div>
-
-        {typeof percentOff === "number" ? (
-          <div className="absolute left-3 bottom-3">
-            <span className="rounded-full bg-green-600 text-white px-3 py-1 text-xs font-semibold">
-              -{percentOff}%
-            </span>
-          </div>
-        ) : null}
-      </div>
-
-      <div className="p-4">
-        <div className="flex items-start justify-between gap-3">
-          <div className="min-w-0">
-            <div className="font-semibold truncate">{product.name}</div>
-            <div className="text-xs text-black/50 mt-1">
-              {isBackOrder ? "Out of stock" : "In stock"}
             </div>
-          </div>
+          )}
+          {reduced && pct > 0 && (
+            <div className="absolute left-3 top-3 z-20 rounded-full bg-green-600 px-4 py-2 text-[12px] font-extrabold text-white shadow">
+              -{pct}%
+            </div>
+          )}
+          {isBackOrder && (
+            <div className="absolute bottom-3 left-3 z-20 rounded-full bg-black px-3 py-1 text-[11px] font-semibold text-white">
+              Back order
+            </div>
+          )}
+          {isAdmin && !product.isActive && (
+            <div className="absolute bottom-3 right-3 z-20 rounded-full bg-red-600 px-3 py-1 text-[11px] font-semibold text-white">
+              Inactive
+            </div>
+          )}
+          {displayImage ? (
+            <Image
+              key={displayImage}
+              src={displayImage}
+              alt={product.name}
+              fill
+              sizes="(max-width:640px) 50vw, (max-width:1024px) 33vw, 25vw"
+              className="object-cover transition-opacity duration-200"
+            />
+          ) : (
+            <div className="absolute inset-0 flex items-center justify-center text-xs text-black/45">
+              No Image
+            </div>
+          )}
+        </div>
+      </Link>
 
-          <div className="shrink-0 font-semibold">
-            £{(unitPricePennies / 100).toFixed(2)}
+      <div className="p-3 sm:p-4">
+        {/* Clickable name */}
+        <Link href={`/products/${product.id}`} className="block">
+          <div className="line-clamp-2 text-sm font-medium leading-snug hover:underline">
+            {product.name}
           </div>
+        </Link>
+
+        {/* Variant pills */}
+        {hasVariants && (
+          <div className="mt-2 flex flex-wrap gap-1">
+            {variants.map((v, i) => (
+              <button
+                key={i}
+                type="button"
+                onClick={() => setSelectedIndex(i)}
+                className={[
+                  "rounded-full border px-2.5 py-1 text-xs font-semibold transition",
+                  selectedIndex === i
+                    ? "border-black bg-black text-white"
+                    : "border-black/20 bg-white text-black hover:border-black/50",
+                ].join(" ")}
+              >
+                {v.label}
+              </button>
+            ))}
+          </div>
+        )}
+
+        {/* Price */}
+        <div className="mt-2">
+          {hasVariants ? (
+            <div className="text-sm font-semibold">
+              {selectedVariant ? fmt(selectedVariant.pricePennies) : `From ${fmt(fromPrice)}`}
+              {!selectedVariant && (
+                <span className="text-xs text-black/50 font-normal ml-1">— select size</span>
+              )}
+            </div>
+          ) : reduced && effectiveDealPennies ? (
+            <div className="leading-tight">
+              <div className="text-sm font-extrabold text-black sm:text-base">
+                {fmt(effectiveDealPennies)}
+              </div>
+              <div className="text-[11px] text-black/50 line-through">{fmt(basePennies)}</div>
+            </div>
+          ) : (
+            <div className="text-sm font-semibold">{fmt(basePennies)}</div>
+          )}
         </div>
 
+        {/* Actions */}
         <div className="mt-3">
-          <ProductQuickActions
+          <ProductsPurchaseActions
             productId={product.id}
-            dealId={dealId}
-            canView={canView}
+            dealId={!hasVariants ? dealId : null}
             isBackOrder={isBackOrder}
-            name={product.name}
-            image={product.image ?? null}
-            unitPricePennies={unitPricePennies}
+            disabled={disabled}
             maxQty={maxQty}
-            linkLabel="Buy"
-            buyLabel="Buy"
-            buyLinkGoesToCheckout={true}
+            stock={product.stock}
+            name={hasVariants && selectedVariant ? `${product.name} — ${selectedVariant.label}` : product.name}
+            unitPricePennies={displayPrice}
+            image={displayImage}
           />
         </div>
+
+        {dealEndsAt && (
+          <div className="mt-2">
+            <DealCountdown endsAtIso={dealEndsAt} className="text-[11px] text-black/60" />
+          </div>
+        )}
+
+        {isBackOrder && !isAdmin && (
+          <div className="mt-3">
+            <StockNotifyButton productId={product.id} />
+          </div>
+        )}
       </div>
     </div>
   );
