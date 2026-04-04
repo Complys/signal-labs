@@ -82,18 +82,6 @@ export default function NewProductPage() {
       return { ...item, [field]: val };
     }));
   }
-  const [variants, setVariants] = useState<Array<{ label: string; pricePennies: number; image: string }>>([]);
-
-  function addVariant() { setVariants((v) => [...v, { label: "", pricePennies: 0, image: "" }]); }
-  function removeVariant(i: number) { setVariants((v) => v.filter((_, idx) => idx !== i)); }
-  function updateVariant(i: number, field: string, val: string) {
-    setVariants((v) => v.map((item, idx) => {
-      if (idx !== i) return item;
-      if (field === "pricePennies") return { ...item, pricePennies: Math.round(parseFloat(val.replace(/[^0-9.]/g,"")) * 100) || 0 };
-      return { ...item, [field]: val };
-    }));
-  }
-
   const [submitting, setSubmitting] = useState(false);
   const [uploading, setUploading] = useState(false);
   const [error, setError] = useState<string>("");
@@ -496,60 +484,6 @@ export default function NewProductPage() {
               </button>
             </div>
 
-            {/* Variants */}
-            <div className="rounded-2xl border border-white/10 bg-black/20 p-4">
-              <div className="text-sm text-white/80 font-semibold mb-1">Size variants</div>
-              <div className="text-xs text-white/50 mb-3">
-                Add variants if this product comes in different sizes with different prices. Leave empty for a single-price product.
-              </div>
-
-              <div className="space-y-3">
-                {variants.map((v, i) => (
-                  <div key={i} className="rounded-xl border border-white/10 bg-black/20 p-3 space-y-2">
-                    <div className="flex items-center gap-2">
-                      <input
-                        type="text"
-                        placeholder="Label e.g. 5mg"
-                        value={v.label}
-                        onChange={(e) => updateVariant(i, "label", e.target.value)}
-                        className="flex-1 rounded-xl border border-white/10 bg-black/40 px-3 py-2 text-sm text-white outline-none focus:border-yellow-400/60 placeholder:text-white/30"
-                      />
-                      <input
-                        type="number"
-                        step="0.01"
-                        min="0"
-                        placeholder="Price £"
-                        value={(v.pricePennies / 100).toFixed(2)}
-                        onChange={(e) => updateVariant(i, "pricePennies", e.target.value)}
-                        className="w-28 rounded-xl border border-white/10 bg-black/40 px-3 py-2 text-sm text-white outline-none focus:border-yellow-400/60"
-                      />
-                      <button
-                        type="button"
-                        onClick={() => removeVariant(i)}
-                        className="text-red-400 hover:text-red-300 text-lg px-2"
-                      >
-                        ×
-                      </button>
-                    </div>
-                    <input
-                      type="text"
-                      placeholder="Image URL for this variant (optional — added later when photos arrive)"
-                      value={v.image}
-                      onChange={(e) => updateVariant(i, "image", e.target.value)}
-                      className="w-full rounded-xl border border-white/10 bg-black/40 px-3 py-2 text-xs text-white outline-none focus:border-yellow-400/60 placeholder:text-white/30"
-                    />
-                  </div>
-                ))}
-              </div>
-
-              <button
-                type="button"
-                onClick={addVariant}
-                className="mt-3 text-xs font-bold text-white/60 hover:text-white border border-white/15 rounded-full px-4 py-1.5"
-              >
-                + Add variant
-              </button>
-            </div>
 
             {/* Active */}
             <div className="flex items-center gap-3">
