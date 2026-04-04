@@ -293,6 +293,7 @@ model Deal {
   buttonLabel  String?
   buttonUrl    String?
   specialPrice Int // pennies
+  variantLabel String? // e.g. "5mg" — specific variant this deal applies to
 
   isActive Boolean @default(true)
 

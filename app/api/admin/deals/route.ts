@@ -29,6 +29,7 @@ export async function POST(req: Request) {
       image: body.image ?? null,
       buttonLabel: body.buttonLabel ?? null,
       buttonUrl: body.buttonUrl ?? null,
+      variantLabel: body.variantLabel?.trim() || null,
       specialPrice: Number(body.specialPrice) || 0,
       isActive: Boolean(body.isActive),
       startsAt: new Date(body.startsAt),

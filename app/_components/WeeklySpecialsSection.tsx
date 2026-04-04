@@ -61,6 +61,7 @@ type DealRow = {
   buttonUrl: string | null;
   specialPrice: number | null;
   endsAt: Date | null;
+  variantLabel?: string | null;
   product: {
     id: string;
     name: string;
@@ -99,7 +100,8 @@ function getProductBasics(d: DealRow) {
   const description = (d.description || product?.description || "").trim();
 
   const image = (d.image || product?.image || "").trim();
-  const titleText = productName || "Weekly Special";
+  const variantLabel = (d as any).variantLabel?.trim() || null;
+  const titleText = variantLabel ? `${productName} — ${variantLabel}` : (productName || "Weekly Special");
 
   const stock = typeof product?.stock === "number" ? product.stock : 0;
   const isBackOrder = stock <= 0;
@@ -169,13 +171,13 @@ function WeeklySpecialTile({
 
         {/* Content above overlay */}
         <div className="relative z-10">
-          <div className="relative aspect-[16/9] bg-black/[0.03]">
+          <div className="relative aspect-[16/9] bg-white">
             {image ? (
               <Image
                 src={image}
                 alt={titleText}
                 fill
-                className="object-cover"
+                className="object-contain p-4"
                 sizes="(max-width: 1024px) 100vw, 33vw"
                 priority={false}
               />
@@ -281,15 +283,13 @@ function WeeklySpecialTile({
               </div>
             </div>
 
-            <p className="mt-3 text-[11px] text-black/50">{isBackOrder ? "Back order" : `Stock: ${stock}`}</p>
-
             {!productName ? (
               <p className="mt-2 text-[11px] text-red-600/80">
-                Admin issue: product name missing (this will break Stripe).
+                Admin issue: product name missing.
               </p>
             ) : !canPrice ? (
               <p className="mt-2 text-[11px] text-red-600/80">
-                Admin issue: product price missing/invalid.
+                Admin issue: product price missing.
               </p>
             ) : null}
           </div>
@@ -314,7 +314,7 @@ function WeeklySpecialTile({
               alt={titleText}
               fill
               sizes="(max-width:640px) 50vw, (max-width:1024px) 33vw, 25vw"
-              className="object-cover"
+              className="object-contain p-3"
             />
           ) : (
             <div className="absolute inset-0 flex items-center justify-center text-xs text-black/45">
@@ -413,15 +413,13 @@ function WeeklySpecialTile({
             )}
           </div>
 
-          <p className="mt-3 text-[11px] text-black/50">{isBackOrder ? "Back order" : `Stock: ${stock}`}</p>
-
           {!productName ? (
             <p className="mt-2 text-[11px] text-red-600/80">
-              Admin issue: product name missing (this will break Stripe).
+              Admin issue: product name missing.
             </p>
           ) : !canPrice ? (
             <p className="mt-2 text-[11px] text-red-600/80">
-              Admin issue: product price missing/invalid.
+              Admin issue: product price missing.
             </p>
           ) : null}
         </div>
@@ -447,7 +445,15 @@ export default async function WeeklySpecialsSection({
     },
     orderBy: [{ startsAt: "desc" }, { createdAt: "desc" }],
     take,
-    include: {
+    select: {
+      id: true,
+      productId: true,
+      description: true,
+      image: true,
+      buttonUrl: true,
+      specialPrice: true,
+      endsAt: true,
+      variantLabel: true,
       product: {
         select: {
           id: true,
@@ -460,6 +466,7 @@ export default async function WeeklySpecialsSection({
         },
       },
     },
+
   })) as DealRow[];
 
   const buildProductHref = (d: DealRow) => {

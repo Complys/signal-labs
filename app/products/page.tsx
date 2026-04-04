@@ -87,6 +87,7 @@ export default async function ProductsPage({
 
   const q = (spValue(sp, "q") || "").trim();
   const activeOnly = spValue(sp, "activeOnly") === "1";
+  const sort = spValue(sp, "sort") || "az";
 
   const session = await getSessionFromApi();
   const isAdmin = session?.user?.role === "ADMIN";
@@ -108,7 +109,11 @@ export default async function ProductsPage({
           }
         : {}),
     },
-    orderBy: { createdAt: "desc" },
+    orderBy: sort === "za" ? { name: "desc" } :
+               sort === "price_asc" ? { price: "asc" } :
+               sort === "price_desc" ? { price: "desc" } :
+               sort === "newest" ? { createdAt: "desc" } :
+               { name: "asc" },
     include: {
       deals: {
         where: {
@@ -177,6 +182,18 @@ export default async function ProductsPage({
 
           <div className="w-full sm:w-[440px]">
             <form method="GET" className="flex items-center gap-2">
+              <select
+                name="sort"
+                defaultValue={sort}
+                className="rounded-2xl border border-black/15 bg-white px-3 py-3 text-sm outline-none focus:border-black/30"
+                onChange={(e) => (e.target.form as HTMLFormElement)?.submit()}
+              >
+                <option value="az">A — Z</option>
+                <option value="za">Z — A</option>
+                <option value="price_asc">Price: Low to High</option>
+                <option value="price_desc">Price: High to Low</option>
+                <option value="newest">Newest</option>
+              </select>
               <input
                 name="q"
                 defaultValue={q}

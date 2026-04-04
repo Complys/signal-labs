@@ -22,6 +22,7 @@ type Deal = {
   buttonLabel?: string | null;
   buttonUrl?: string | null;
   specialPrice: number; // pennies
+  variantLabel?: string | null;
   isActive: boolean;
   startsAt: string; // ISO
   endsAt?: string | null; // ISO
@@ -123,6 +124,7 @@ type Row = {
 
   buttonLabel: string;
   buttonUrl: string;
+  variantLabel: string;
 
   image: string; // override image URL
 
@@ -145,6 +147,7 @@ function buildInitialRows(products: Product[], dealsByProductId: Record<string, 
     const endsAtIso = d?.endsAt || null;
 
     const overrideImage = d?.image || "";
+    const variantLabel = d?.variantLabel || "";
 
     return {
       product: p,
@@ -165,6 +168,7 @@ function buildInitialRows(products: Product[], dealsByProductId: Record<string, 
       buttonUrl: d?.buttonUrl || "",
 
       image: overrideImage,
+      variantLabel,
 
       saving: false,
       error: "",
