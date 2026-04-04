@@ -82,3 +82,6 @@ export async function PATCH(
   }
 }
 
+
+// PUT is an alias for PATCH
+export { PATCH as PUT };
