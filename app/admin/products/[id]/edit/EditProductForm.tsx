@@ -106,6 +106,24 @@ export default function EditProductForm({
   const [percentLive, setPercentLive] = useState<string>("");
   const [variants, setVariants] = useState<Array<{ label: string; pricePennies: number; image?: string }>>(defaults.variants ?? []);
 
+  const [variantUploading, setVariantUploading] = useState<number | null>(null);
+
+  async function uploadVariantImage(i: number, file: File) {
+    setVariantUploading(i);
+    try {
+      const fd = new FormData();
+      fd.append("file", file);
+      const res = await fetch("/api/upload", { method: "POST", body: fd, credentials: "same-origin" });
+      const data = await res.json().catch(() => ({}));
+      if (!res.ok) throw new Error(data?.error || "Upload failed");
+      updateVariant(i, "image", data.url);
+    } catch (e: any) {
+      alert(e?.message || "Upload failed");
+    } finally {
+      setVariantUploading(null);
+    }
+  }
+
   function addVariant() { setVariants((v) => [...v, { label: "", pricePennies: 0, image: "" }]); }
   function removeVariant(i: number) { setVariants((v) => v.filter((_, idx) => idx !== i)); }
   function updateVariant(i: number, field: string, val: string) {
@@ -456,6 +474,7 @@ export default function EditProductForm({
         <div className="space-y-3">
           {variants.map((v, i) => (
             <div key={i} className="rounded-xl border border-white/10 bg-black/20 p-3 space-y-2">
+              {/* Label + Price + Remove */}
               <div className="flex items-center gap-2">
                 <input
                   type="text"
@@ -473,15 +492,57 @@ export default function EditProductForm({
                   onBlur={(e) => updateVariant(i, "pricePennies", e.target.value)}
                   className="w-28 rounded-xl bg-black/30 border border-white/10 px-3 py-2 text-sm text-white outline-none focus:border-white/20"
                 />
-                <button type="button" onClick={() => removeVariant(i)} className="text-red-400 hover:text-red-300 text-lg px-2">×</button>
+                <button type="button" onClick={() => removeVariant(i)} className="text-red-400 hover:text-red-300 text-xl leading-none px-1">×</button>
               </div>
-              <input
-                type="text"
-                placeholder="Image URL for this variant (optional)"
-                value={v.image ?? ""}
-                onChange={(e) => updateVariant(i, "image", e.target.value)}
-                className="w-full rounded-xl bg-black/30 border border-white/10 px-3 py-2 text-xs text-white outline-none focus:border-white/20 placeholder:text-white/30"
-              />
+
+              {/* Image uploader */}
+              <div className="rounded-xl border border-white/10 bg-black/30 p-3">
+                <div className="text-[11px] text-white/50 mb-2">Variant image</div>
+                {v.image ? (
+                  <div className="flex items-center gap-3 mb-2">
+                    {/* eslint-disable-next-line @next/next/no-img-element */}
+                    <img src={v.image} alt={v.label} className="h-14 w-14 rounded-lg object-cover border border-white/10" />
+                    <div className="flex-1 min-w-0">
+                      <p className="text-xs text-white/60 truncate">{v.image}</p>
+                    </div>
+                    <button type="button" onClick={() => updateVariant(i, "image", "")} className="text-xs text-red-400 hover:text-red-300 shrink-0">Remove</button>
+                  </div>
+                ) : null}
+
+                <div
+                  className="border-2 border-dashed border-white/20 rounded-xl p-4 text-center cursor-pointer hover:border-white/40 transition"
+                  onDragOver={(e) => { e.preventDefault(); }}
+                  onDrop={(e) => {
+                    e.preventDefault();
+                    const file = e.dataTransfer.files?.[0];
+                    if (file) uploadVariantImage(i, file);
+                  }}
+                  onClick={() => {
+                    const input = document.createElement("input");
+                    input.type = "file";
+                    input.accept = "image/png,image/jpeg,image/webp";
+                    input.onchange = (e) => {
+                      const file = (e.target as HTMLInputElement).files?.[0];
+                      if (file) uploadVariantImage(i, file);
+                    };
+                    input.click();
+                  }}
+                >
+                  {variantUploading === i ? (
+                    <p className="text-xs text-white/50">Uploading…</p>
+                  ) : (
+                    <p className="text-xs text-white/40">Drop image here or <span className="text-yellow-400 underline">click to upload</span></p>
+                  )}
+                </div>
+
+                <input
+                  type="text"
+                  placeholder="Or paste image URL"
+                  value={v.image ?? ""}
+                  onChange={(e) => updateVariant(i, "image", e.target.value)}
+                  className="mt-2 w-full rounded-xl bg-black/30 border border-white/10 px-3 py-2 text-xs text-white outline-none focus:border-white/20 placeholder:text-white/30"
+                />
+              </div>
             </div>
           ))}
         </div>
