@@ -158,6 +158,13 @@ export default function ProductsPurchaseActions({
         </p>
       ) : null}
 
+      {/* Low stock warning */}
+      {showLowStock && stockNum !== null ? (
+        <p className="mt-2 text-xs font-semibold text-amber-700">
+          Only {stockNum} in stock — your order will be adjusted at checkout.
+        </p>
+      ) : null}
+
       {/* Add to cart */}
       <div className="mt-3">
         <AddToCartButton
