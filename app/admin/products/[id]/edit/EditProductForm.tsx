@@ -522,7 +522,14 @@ export default function EditProductForm({
         <div className="text-sm text-white/80 font-semibold mb-1">Size variants</div>
         <div className="text-xs text-white/50 mb-3">Add variants if this product comes in different sizes with different prices. Leave empty for a single-price product.</div>
 
-        <input type="hidden" name="variantsJson" value={JSON.stringify(variants)} />
+        {/* variantsJson submitted with form */}
+        <textarea
+          name="variantsJson"
+          value={JSON.stringify(variants)}
+          onChange={() => {}}
+          style={{ display: "none" }}
+          aria-hidden="true"
+        />
 
         <div className="space-y-3">
           {variants.map((v, i) => (
