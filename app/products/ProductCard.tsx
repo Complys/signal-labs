@@ -66,9 +66,23 @@ export default function ProductCard({
     : isBackOrder;
 
   // Effective price
+  // Find variant-specific deal
+  const allDeals = product.allDeals ?? [];
+  const variantDeal = hasVariants && selectedVariant
+    ? allDeals.find((d: any) => d.variantLabel === selectedVariant.label) ?? null
+    : null;
+
   const effectiveBasePennies = selectedVariant ? selectedVariant.pricePennies : basePennies;
-  const effectiveDealPennies = !hasVariants && reduced && dealPennies ? dealPennies : null;
-  const displayPrice = effectiveDealPennies ?? effectiveBasePennies;
+  const variantDealPennies = variantDeal ? Number(variantDeal.specialPrice) : null;
+  const effectiveDealPennies = variantDealPennies != null
+    ? variantDealPennies
+    : (!hasVariants && reduced && dealPennies ? dealPennies : null);
+  const showReduced = effectiveDealPennies != null && effectiveDealPennies < effectiveBasePennies;
+  const displayPrice = showReduced && effectiveDealPennies != null ? effectiveDealPennies : effectiveBasePennies;
+  const effectivePct = showReduced && effectiveDealPennies != null
+    ? Math.round(((effectiveBasePennies - effectiveDealPennies) / effectiveBasePennies) * 100)
+    : pct;
+  const effectiveDealId = variantDeal?.id ?? dealId;
   const fromPrice = hasVariants ? Math.min(...variants.map(v => v.pricePennies)) : basePennies;
 
   // Effective image
