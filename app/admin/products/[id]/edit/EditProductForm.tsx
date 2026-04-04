@@ -184,8 +184,7 @@ export default function EditProductForm({
   }
 
   function addVariant() {
-    setVariants((v) => [...v, { label: "", pricePennies: 0, image: "" }]);
-    setVariantPriceRaw((r) => [...r, "0.00"]);
+    setVariants((v) => [...v, { label: "", priceRaw: "", costRaw: "", pricePennies: 0, costPennies: 0, stock: 0, image: "" }]);
   }
   function removeVariant(i: number) {
     setVariants((v) => v.filter((_, idx) => idx !== i));
@@ -642,7 +641,7 @@ export default function EditProductForm({
                     <div className="flex-1 min-w-0">
                       <p className="text-xs text-white/60 truncate">{v.image}</p>
                     </div>
-                    <button type="button" onClick={() => updateVariant(i, "image", "")} className="text-xs text-red-400 hover:text-red-300 shrink-0">Remove</button>
+                    <button type="button" onClick={() => updateVariantField(i, "image", "")} className="text-xs text-red-400 hover:text-red-300 shrink-0">Remove</button>
                   </div>
                 ) : null}
 
@@ -676,7 +675,7 @@ export default function EditProductForm({
                   type="text"
                   placeholder="Or paste image URL"
                   value={v.image ?? ""}
-                  onChange={(e) => updateVariant(i, "image", e.target.value)}
+                  onChange={(e) => updateVariantField(i, "image", e.target.value)}
                   className="mt-2 w-full rounded-xl bg-black/30 border border-white/10 px-3 py-2 text-xs text-white outline-none focus:border-white/20 placeholder:text-white/30"
                 />
               </div>
