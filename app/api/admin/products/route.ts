@@ -154,6 +154,13 @@ export async function POST(req: Request) {
 
     const initialStockNote = asString(data.initialStockNote) || null;
 
+    // Parse variantsJson
+    let variantsJson: string | null = null;
+    const rawVariants = data.variantsJson;
+    if (rawVariants && typeof rawVariants === "string" && rawVariants !== "[]") {
+      try { JSON.parse(rawVariants); variantsJson = rawVariants; } catch {}
+    }
+
     // ✅ IMPORTANT: transaction so product + stock purchase stay in sync
     const result = await prisma.$transaction(async (tx) => {
       const product = await tx.product.create({
@@ -165,6 +172,7 @@ export async function POST(req: Request) {
           stock: stockParsed.stock,
           isActive,
           costPennies: costParsed.pennies > 0 ? costParsed.pennies : null,
+          variantsJson,
         },
         select: {
           id: true,

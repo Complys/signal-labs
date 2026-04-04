@@ -180,6 +180,7 @@ export default async function AdminEditProductPage(props: {
             image,
             isActive,
             costPennies: costPennies, // nullable; blank clears
+            variantsJson,
           },
           select: { id: true, stock: true, costPennies: true, name: true },
         });
