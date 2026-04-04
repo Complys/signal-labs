@@ -110,6 +110,24 @@ export default function EditProductForm({
   );
 
   const [variantUploading, setVariantUploading] = useState<number | null>(null);
+  const [mainImageUploading, setMainImageUploading] = useState(false);
+  const [mainImageLive, setMainImageLive] = useState(defaults.image);
+
+  async function uploadMainImage(file: File) {
+    setMainImageUploading(true);
+    try {
+      const fd = new FormData();
+      fd.append("file", file);
+      const res = await fetch("/api/upload", { method: "POST", body: fd, credentials: "same-origin" });
+      const data = await res.json().catch(() => ({}));
+      if (!res.ok) throw new Error(data?.error || "Upload failed");
+      setMainImageLive(data.url);
+    } catch (e: any) {
+      alert(e?.message || "Upload failed");
+    } finally {
+      setMainImageUploading(false);
+    }
+  }
 
   async function uploadVariantImage(i: number, file: File) {
     setVariantUploading(i);
@@ -322,12 +340,38 @@ export default function EditProductForm({
       </div>
 
       <div>
-        <label className="text-sm text-white/70">Image URL</label>
+        <label className="text-sm text-white/70">Product image</label>
+        <input type="hidden" name="image" value={mainImageLive} />
+
+        {mainImageLive ? (
+          <div className="mt-2 flex items-center gap-3 mb-2">
+            {/* eslint-disable-next-line @next/next/no-img-element */}
+            <img src={mainImageLive} alt="Product" className="h-20 w-20 rounded-xl object-cover border border-white/10" />
+            <div className="flex-1 min-w-0">
+              <p className="text-xs text-white/50 truncate">{mainImageLive}</p>
+            </div>
+            <button type="button" onClick={() => setMainImageLive("")} className="text-xs text-red-400 hover:text-red-300 shrink-0">Remove</button>
+          </div>
+        ) : null}
+
+        <div
+          className="mt-2 border-2 border-dashed border-white/20 rounded-2xl p-5 text-center cursor-pointer hover:border-white/40 transition"
+          onDragOver={(e) => e.preventDefault()}
+          onDrop={(e) => { e.preventDefault(); const f = e.dataTransfer.files?.[0]; if (f) uploadMainImage(f); }}
+          onClick={() => { const inp = document.createElement("input"); inp.type="file"; inp.accept="image/png,image/jpeg,image/webp"; inp.onchange=(e)=>{ const f=(e.target as HTMLInputElement).files?.[0]; if(f) uploadMainImage(f); }; inp.click(); }}
+        >
+          {mainImageUploading
+            ? <p className="text-sm text-white/50">Uploading…</p>
+            : <p className="text-sm text-white/40">Drop image here or <span className="text-yellow-400 underline">click to upload</span></p>
+          }
+          <p className="text-xs text-white/30 mt-1">PNG / JPG / WEBP up to 5MB</p>
+        </div>
+
         <input
-          name="image"
-          defaultValue={defaults.image}
-          className={fe.image ? inputErrCls : inputCls}
-          placeholder="/uploads/..."
+          value={mainImageLive}
+          onChange={(e) => setMainImageLive(e.target.value)}
+          className="mt-2 w-full rounded-2xl bg-black/30 border border-white/10 px-4 py-2 text-sm text-white placeholder:text-white/30 outline-none focus:border-white/20"
+          placeholder="Or paste image URL"
         />
         <FieldError msg={fe.image} />
       </div>
