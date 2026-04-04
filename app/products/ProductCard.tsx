@@ -78,7 +78,7 @@ export default function ProductCard({
           <div className="min-w-0">
             <div className="font-semibold truncate">{product.name}</div>
             <div className="text-xs text-black/50 mt-1">
-              {isBackOrder ? "Back order" : `Stock: ${product.stock}`}
+              {isBackOrder ? "Out of stock" : "In stock"}
             </div>
           </div>
 

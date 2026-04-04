@@ -16,7 +16,7 @@ type Defaults = {
   stock: string;
   image: string;
   isActive: boolean;
-  variants: Array<{ label: string; pricePennies: number }>;
+  variants: Array<{ label: string; pricePennies: number; image?: string }>;
 
   // Weekly Specials / Deals
   onSpecial: boolean;
@@ -104,16 +104,16 @@ export default function EditProductForm({
   const [specialLive, setSpecialLive] = useState(defaults.specialPrice);
   const [onSpecialLive, setOnSpecialLive] = useState(defaults.onSpecial);
   const [percentLive, setPercentLive] = useState<string>("");
-  const [variants, setVariants] = useState<Array<{ label: string; pricePennies: number }>>(defaults.variants ?? []);
+  const [variants, setVariants] = useState<Array<{ label: string; pricePennies: number; image?: string }>>(defaults.variants ?? []);
 
-  function addVariant() { setVariants((v) => [...v, { label: "", pricePennies: 0 }]); }
+  function addVariant() { setVariants((v) => [...v, { label: "", pricePennies: 0, image: "" }]); }
   function removeVariant(i: number) { setVariants((v) => v.filter((_, idx) => idx !== i)); }
-  function updateVariant(i: number, field: "label" | "pricePennies", val: string) {
-    setVariants((v) => v.map((item, idx) =>
-      idx !== i ? item :
-      field === "label" ? { ...item, label: val } :
-      { ...item, pricePennies: Math.round(parseFloat(val.replace(/[^0-9.]/g,"")) * 100) || 0 }
-    ));
+  function updateVariant(i: number, field: string, val: string) {
+    setVariants((v) => v.map((item, idx) => {
+      if (idx !== i) return item;
+      if (field === "pricePennies") return { ...item, pricePennies: Math.round(parseFloat(val.replace(/[^0-9.]/g,"")) * 100) || 0 };
+      return { ...item, [field]: val };
+    }));
   }
 
   const priceNum = useMemo(() => toNumberOrNaN(priceLive), [priceLive]);
@@ -478,8 +478,8 @@ export default function EditProductForm({
               <input
                 type="text"
                 placeholder="Image URL for this variant (optional)"
-                value={(v as any).image ?? ""}
-                onChange={(e) => setVariants((prev) => prev.map((item, idx) => idx !== i ? item : { ...item, image: e.target.value }))}
+                value={v.image ?? ""}
+                onChange={(e) => updateVariant(i, "image", e.target.value)}
                 className="w-full rounded-xl bg-black/30 border border-white/10 px-3 py-2 text-xs text-white outline-none focus:border-white/20 placeholder:text-white/30"
               />
             </div>
