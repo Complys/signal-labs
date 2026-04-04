@@ -266,7 +266,7 @@ export default function DealsManager({ products, dealsByProductId }: Props) {
       buttonLabel: snapshot.buttonLabel || null,
       buttonUrl: normalizedButtonUrl, // ✅ safe
       specialPrice: specialPennies,
-          variantLabel: row.variantLabel?.trim() || null,
+          variantLabel: snapshot.variantLabel?.trim() || null,
       startsAt: fromLocalInputValue(snapshot.startsAtLocal),
       endsAt: snapshot.endsAtLocal ? fromLocalInputValue(snapshot.endsAtLocal) : null,
     };

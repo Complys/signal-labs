@@ -445,15 +445,7 @@ export default async function WeeklySpecialsSection({
     },
     orderBy: [{ startsAt: "desc" }, { createdAt: "desc" }],
     take,
-    select: {
-      id: true,
-      productId: true,
-      description: true,
-      image: true,
-      buttonUrl: true,
-      specialPrice: true,
-      endsAt: true,
-      variantLabel: true,
+    include: {
       product: {
         select: {
           id: true,
