@@ -104,13 +104,48 @@ export default function EditProductForm({
   const [specialLive, setSpecialLive] = useState(defaults.specialPrice);
   const [onSpecialLive, setOnSpecialLive] = useState(defaults.onSpecial);
   const [percentLive, setPercentLive] = useState<string>("");
-  const [variants, setVariants] = useState<Array<{ label: string; pricePennies: number; costPennies?: number; stock?: number; image?: string }>>(defaults.variants ?? []);
-  const [variantPriceRaw, setVariantPriceRaw] = useState<string[]>(
-    () => (defaults.variants ?? []).map((v) => (v.pricePennies / 100).toFixed(2))
+  // Variants stored with raw string values for price/cost to avoid mid-type recalculation
+  type VariantRow = {
+    label: string;
+    priceRaw: string;   // display string e.g. "29.99"
+    costRaw: string;    // display string e.g. "10.00"
+    pricePennies: number;
+    costPennies: number;
+    stock: number;
+    image: string;
+  };
+
+  const [variants, setVariants] = useState<VariantRow[]>(
+    () => (defaults.variants ?? []).map((v) => ({
+      label: v.label ?? "",
+      priceRaw: (v.pricePennies / 100).toFixed(2),
+      costRaw: ((v.costPennies ?? 0) / 100).toFixed(2),
+      pricePennies: v.pricePennies ?? 0,
+      costPennies: v.costPennies ?? 0,
+      stock: v.stock ?? 0,
+      image: v.image ?? "",
+    }))
   );
-  const [variantCostRaw, setVariantCostRaw] = useState<string[]>(
-    () => (defaults.variants ?? []).map((v) => ((v.costPennies ?? 0) / 100).toFixed(2))
-  );
+
+  function updateVariantField(i: number, field: keyof VariantRow, val: string | number) {
+    setVariants((prev) => prev.map((v, idx) => idx !== i ? v : { ...v, [field]: val }));
+  }
+
+  function commitVariantPrice(i: number) {
+    setVariants((prev) => prev.map((v, idx) => {
+      if (idx !== i) return v;
+      const pennies = Math.round(parseFloat(v.priceRaw.replace(/[^0-9.]/g, "")) * 100) || 0;
+      return { ...v, pricePennies: pennies, priceRaw: (pennies / 100).toFixed(2) };
+    }));
+  }
+
+  function commitVariantCost(i: number) {
+    setVariants((prev) => prev.map((v, idx) => {
+      if (idx !== i) return v;
+      const pennies = Math.round(parseFloat(v.costRaw.replace(/[^0-9.]/g, "")) * 100) || 0;
+      return { ...v, costPennies: pennies, costRaw: (pennies / 100).toFixed(2) };
+    }));
+  }
 
   const [variantUploading, setVariantUploading] = useState<number | null>(null);
   const [mainImageUploading, setMainImageUploading] = useState(false);
@@ -140,7 +175,7 @@ export default function EditProductForm({
       const res = await fetch("/api/upload", { method: "POST", body: fd, credentials: "same-origin" });
       const data = await res.json().catch(() => ({}));
       if (!res.ok) throw new Error(data?.error || "Upload failed");
-      updateVariant(i, "image", data.url);
+      updateVariantField(i, "image", data.url);
     } catch (e: any) {
       alert(e?.message || "Upload failed");
     } finally {
@@ -154,16 +189,8 @@ export default function EditProductForm({
   }
   function removeVariant(i: number) {
     setVariants((v) => v.filter((_, idx) => idx !== i));
-    setVariantPriceRaw((r) => r.filter((_, idx) => idx !== i));
-    setVariantCostRaw((r) => r.filter((_, idx) => idx !== i));
   }
-  function updateVariant(i: number, field: string, val: string) {
-    setVariants((v) => v.map((item, idx) => {
-      if (idx !== i) return item;
-      if (field === "pricePennies") return { ...item, pricePennies: Math.round(parseFloat(val.replace(/[^0-9.]/g,"")) * 100) || 0 };
-      return { ...item, [field]: val };
-    }));
-  }
+
 
   const priceNum = useMemo(() => toNumberOrNaN(priceLive), [priceLive]);
   const costNum = useMemo(() => toNumberOrNaN(costLive), [costLive]);
@@ -535,7 +562,7 @@ export default function EditProductForm({
         {/* variantsJson submitted with form */}
         <textarea
           name="variantsJson"
-          value={JSON.stringify(variants)}
+          value={JSON.stringify(variants.map(v => ({ label: v.label, pricePennies: v.pricePennies, costPennies: v.costPennies, stock: v.stock, image: v.image })))}
           onChange={() => {}}
           style={{ display: "none" }}
           aria-hidden="true"
@@ -544,49 +571,41 @@ export default function EditProductForm({
         <div className="space-y-3">
           {variants.map((v, i) => (
             <div key={i} className="rounded-xl border border-white/10 bg-black/20 p-3 space-y-2">
-              {/* Label + Price + Remove */}
+              {/* Label + Remove */}
               <div className="flex items-center gap-2">
                 <input
                   type="text"
                   placeholder="Label e.g. 5mg"
                   value={v.label}
-                  onChange={(e) => updateVariant(i, "label", e.target.value)}
+                  onChange={(e) => updateVariantField(i, "label", e.target.value)}
                   className="flex-1 rounded-xl bg-black/30 border border-white/10 px-3 py-2 text-sm text-white outline-none focus:border-white/20 placeholder:text-white/30"
-                />
-                <input
-                  type="text"
-                  inputMode="decimal"
-                  placeholder="Price £"
-                  value={variantPriceRaw[i] ?? (v.pricePennies / 100).toFixed(2)}
-                  onChange={(e) => {
-                    const val = e.target.value;
-                    setVariantPriceRaw((r) => r.map((x, idx) => idx === i ? val : x));
-                  }}
-                  onBlur={(e) => {
-                    updateVariant(i, "pricePennies", variantPriceRaw[i] ?? "0");
-                  }}
-                  className="w-28 rounded-xl bg-black/30 border border-white/10 px-3 py-2 text-sm text-white outline-none focus:border-white/20"
                 />
                 <button type="button" onClick={() => removeVariant(i)} className="text-red-400 hover:text-red-300 text-xl leading-none px-1">×</button>
               </div>
 
-              {/* Cost, Stock, P&L */}
-              <div className="grid grid-cols-3 gap-2">
+              {/* Price, Cost, Stock, Margin */}
+              <div className="grid grid-cols-4 gap-2">
+                <div>
+                  <div className="text-[10px] text-white/40 mb-1">Sell price (£)</div>
+                  <input
+                    type="text"
+                    inputMode="decimal"
+                    placeholder="0.00"
+                    value={v.priceRaw}
+                    onChange={(e) => updateVariantField(i, "priceRaw", e.target.value)}
+                    onBlur={() => commitVariantPrice(i)}
+                    className="w-full rounded-xl bg-black/30 border border-white/10 px-3 py-2 text-sm text-white outline-none focus:border-white/20"
+                  />
+                </div>
                 <div>
                   <div className="text-[10px] text-white/40 mb-1">Cost (£)</div>
                   <input
                     type="text"
                     inputMode="decimal"
                     placeholder="0.00"
-                    value={variantCostRaw[i] ?? "0.00"}
-                    onChange={(e) => {
-                      const val = e.target.value;
-                      setVariantCostRaw((r) => r.map((x, idx) => idx === i ? val : x));
-                    }}
-                    onBlur={() => {
-                      const pennies = Math.round(parseFloat(variantCostRaw[i]?.replace(/[^0-9.]/g,"") || "0") * 100) || 0;
-                      setVariants((prev) => prev.map((item, idx) => idx !== i ? item : { ...item, costPennies: pennies }));
-                    }}
+                    value={v.costRaw}
+                    onChange={(e) => updateVariantField(i, "costRaw", e.target.value)}
+                    onBlur={() => commitVariantCost(i)}
                     className="w-full rounded-xl bg-black/30 border border-white/10 px-3 py-2 text-sm text-white outline-none focus:border-white/20"
                   />
                 </div>
@@ -596,24 +615,19 @@ export default function EditProductForm({
                     type="text"
                     inputMode="numeric"
                     placeholder="0"
-                    value={String(v.stock ?? 0)}
-                    onChange={(e) => setVariants((prev) => prev.map((item, idx) =>
-                      idx !== i ? item : { ...item, stock: parseInt(e.target.value) || 0 }
-                    ))}
+                    value={String(v.stock)}
+                    onChange={(e) => updateVariantField(i, "stock", parseInt(e.target.value) || 0)}
                     className="w-full rounded-xl bg-black/30 border border-white/10 px-3 py-2 text-sm text-white outline-none focus:border-white/20"
                   />
                 </div>
                 <div>
                   <div className="text-[10px] text-white/40 mb-1">Margin</div>
-                  <div className="rounded-xl bg-black/30 border border-white/10 px-3 py-2 text-sm font-bold">
-                    {(() => {
-                      const sell = v.pricePennies;
-                      const cost = v.costPennies ?? 0;
-                      if (!sell || sell <= 0) return <span className="text-white/30">—</span>;
-                      if (!cost || cost <= 0) return <span className="text-white/30">—</span>;
-                      const margin = Math.round(((sell - cost) / sell) * 100);
-                      return <span className={margin >= 30 ? "text-emerald-400" : margin >= 10 ? "text-yellow-300" : "text-orange-400"}>{margin}%</span>;
-                    })()}
+                  <div className="rounded-xl bg-black/30 border border-white/10 px-3 py-2 text-sm font-bold min-h-[40px] flex items-center">
+                    {v.pricePennies > 0 && v.costPennies > 0 ? (
+                      <span className={(() => { const m = Math.round(((v.pricePennies - v.costPennies) / v.pricePennies) * 100); return m >= 30 ? "text-emerald-400" : m >= 10 ? "text-yellow-300" : "text-orange-400"; })()}>
+                        {Math.round(((v.pricePennies - v.costPennies) / v.pricePennies) * 100)}%
+                      </span>
+                    ) : <span className="text-white/30">—</span>}
                   </div>
                 </div>
               </div>
