@@ -157,6 +157,10 @@ export default async function AdminEditProductPage(props: {
     const safePrice = pricePennies!;
     const safeStock = stock!;
 
+    const variantsRaw = String(formData.get("variantsJson") ?? "[]");
+    let variantsJson: string | null = null;
+    try { JSON.parse(variantsRaw); variantsJson = variantsRaw; } catch {}
+
     try {
       await prisma.$transaction(async (tx) => {
         // ✅ read previous stock + previous cost inside the transaction
