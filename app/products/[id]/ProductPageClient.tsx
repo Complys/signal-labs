@@ -93,7 +93,7 @@ export default function ProductPageClient({
                   : "bg-emerald-50 text-emerald-700 ring-emerald-100",
               ].join(" ")}
             >
-              {effectiveIsBackOrder ? "Out of stock" : "In stock"}
+              {effectiveIsBackOrder ? "Out of stock — back order available" : "In stock"}
             </span>
           </div>
         </div>

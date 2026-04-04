@@ -83,7 +83,7 @@ export default function ProductsPurchaseActions({
     if (document.activeElement === inputRef.current) inputRef.current?.blur();
   }
 
-  const buyLabel = disabled ? "Unavailable" : isBackOrder ? "Back order" : "Buy";
+  const buyLabel = disabled ? "Unavailable" : isBackOrder ? "Back order (10–15 days)" : "Buy";
 
   const stockNum = typeof stock === "number" ? stock : null;
   const showLowStock = stockNum !== null && stockNum > 0 && qty > stockNum;

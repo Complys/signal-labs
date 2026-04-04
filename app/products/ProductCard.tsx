@@ -86,7 +86,7 @@ export default function ProductCard({
             </div>
           )}
           {effectiveIsBackOrder && (
-            <div className="absolute bottom-3 left-3 z-20 rounded-full bg-black px-3 py-1 text-[11px] font-semibold text-white">
+            <div className="absolute bottom-3 left-3 z-20 rounded-full bg-amber-500 px-3 py-1 text-[11px] font-semibold text-white">
               Back order
             </div>
           )}
