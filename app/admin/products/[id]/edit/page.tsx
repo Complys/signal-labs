@@ -74,6 +74,7 @@ export default async function AdminEditProductPage(props: {
         image: true,
         isActive: true,
         costPennies: true,
+        variantsJson: true,
       },
     }),
     prisma.deal.findFirst({ where: activeDealWhere(id) }),
