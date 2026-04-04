@@ -152,7 +152,7 @@ export default function ProductPageClient({
                 </p>
               )}
               <p className="mt-1 text-xs text-emerald-700 font-semibold">
-                With offer (spend £500+): {formatGBPFromPennies(Math.round(displayPricePennies * 0.7))}
+                With offer: {formatGBPFromPennies(Math.round(displayPricePennies * 0.7))}
               </p>
               {dealEndsAt ? (
                 <div className="mt-2">

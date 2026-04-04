@@ -95,6 +95,17 @@ export default function ProductCard({
               Inactive
             </div>
           )}
+
+          {/* Offer price badge — top right corner */}
+          <div className="absolute top-0 right-0 z-20 bg-emerald-600 text-white rounded-bl-2xl px-3 py-2 text-center">
+            <div className="text-[10px] font-bold uppercase tracking-wide leading-none">With offer</div>
+            <div className="text-sm font-extrabold leading-tight mt-0.5">
+              {hasVariants
+                ? (selectedVariant ? fmt(Math.round(selectedVariant.pricePennies * 0.7)) : `From ${fmt(Math.round(fromPrice * 0.7))}`)
+                : fmt(Math.round((effectiveDealPennies ?? basePennies) * 0.7))
+              }
+            </div>
+          </div>
           {displayImage ? (
             <Image
               key={displayImage}
@@ -144,15 +155,8 @@ export default function ProductCard({
         {/* Price */}
         <div className="mt-2">
           {hasVariants ? (
-            <div>
-              <div className="text-sm font-semibold">
-                {selectedVariant ? fmt(selectedVariant.pricePennies) : `From ${fmt(fromPrice)}`}
-              </div>
-              <div className="text-[11px] text-emerald-700 font-semibold mt-0.5">
-                With offer: {selectedVariant
-                  ? `${fmt(Math.round(selectedVariant.pricePennies * 0.7))}`
-                  : `From ${fmt(Math.round(fromPrice * 0.7))}`}
-              </div>
+            <div className="text-sm font-semibold">
+              {selectedVariant ? fmt(selectedVariant.pricePennies) : `From ${fmt(fromPrice)}`}
             </div>
           ) : reduced && effectiveDealPennies ? (
             <div className="leading-tight">
@@ -162,12 +166,7 @@ export default function ProductCard({
               <div className="text-[11px] text-black/50 line-through">{fmt(basePennies)}</div>
             </div>
           ) : (
-            <div>
-              <div className="text-sm font-semibold">{fmt(basePennies)}</div>
-              <div className="text-[11px] text-emerald-700 font-semibold mt-0.5">
-                With offer: {fmt(Math.round(basePennies * 0.7))}
-              </div>
-            </div>
+            <div className="text-sm font-semibold">{fmt(basePennies)}</div>
           )}
         </div>
 
