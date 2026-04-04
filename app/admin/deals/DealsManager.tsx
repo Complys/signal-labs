@@ -266,6 +266,7 @@ export default function DealsManager({ products, dealsByProductId }: Props) {
       buttonLabel: snapshot.buttonLabel || null,
       buttonUrl: normalizedButtonUrl, // ✅ safe
       specialPrice: specialPennies,
+          variantLabel: row.variantLabel?.trim() || null,
       startsAt: fromLocalInputValue(snapshot.startsAtLocal),
       endsAt: snapshot.endsAtLocal ? fromLocalInputValue(snapshot.endsAtLocal) : null,
     };
@@ -503,6 +504,27 @@ export default function DealsManager({ products, dealsByProductId }: Props) {
                           </div>
                         </div>
                       </div>
+                    </div>
+                  </td>
+
+                  {/* Variant label */}
+                  <td className="px-4 py-4 align-top">
+                    <label className="block text-xs font-semibold text-white/60 mb-1">
+                      Variant <span className="font-normal text-white/40">(optional)</span>
+                    </label>
+                    <input
+                      type="text"
+                      value={row.variantLabel}
+                      onChange={(e) => updateRow(idx, { variantLabel: e.target.value })}
+                      disabled={disabledInputs}
+                      placeholder="e.g. 5mg"
+                      className={[
+                        "w-full rounded-xl border border-white/15 bg-black/40 px-3 py-2 text-sm text-white outline-none focus:border-white/30 placeholder:text-white/25",
+                        disabledInputs ? "opacity-50" : "",
+                      ].join(" ")}
+                    />
+                    <div className="mt-1 text-[11px] text-white/40">
+                      Leave blank to apply deal to whole product
                     </div>
                   </td>
 
