@@ -110,7 +110,7 @@ export default async function AdminEditProductPage(props: {
     // Validation (match your current behaviour)
     if (!name) fieldErrors.name = "Name is required";
     if (!description) fieldErrors.description = "Description is required";
-    if (!image) fieldErrors.image = "Image URL is required";
+    // image is optional — products may not have images yet
 
     if (pricePennies === null || pricePennies < 0) {
       fieldErrors.price = "Enter a valid £ amount (0+)";

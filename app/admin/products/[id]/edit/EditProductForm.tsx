@@ -105,6 +105,9 @@ export default function EditProductForm({
   const [onSpecialLive, setOnSpecialLive] = useState(defaults.onSpecial);
   const [percentLive, setPercentLive] = useState<string>("");
   const [variants, setVariants] = useState<Array<{ label: string; pricePennies: number; image?: string }>>(defaults.variants ?? []);
+  const [variantPriceRaw, setVariantPriceRaw] = useState<string[]>(
+    () => (defaults.variants ?? []).map((v) => (v.pricePennies / 100).toFixed(2))
+  );
 
   const [variantUploading, setVariantUploading] = useState<number | null>(null);
 
@@ -124,8 +127,14 @@ export default function EditProductForm({
     }
   }
 
-  function addVariant() { setVariants((v) => [...v, { label: "", pricePennies: 0, image: "" }]); }
-  function removeVariant(i: number) { setVariants((v) => v.filter((_, idx) => idx !== i)); }
+  function addVariant() {
+    setVariants((v) => [...v, { label: "", pricePennies: 0, image: "" }]);
+    setVariantPriceRaw((r) => [...r, "0.00"]);
+  }
+  function removeVariant(i: number) {
+    setVariants((v) => v.filter((_, idx) => idx !== i));
+    setVariantPriceRaw((r) => r.filter((_, idx) => idx !== i));
+  }
   function updateVariant(i: number, field: string, val: string) {
     setVariants((v) => v.map((item, idx) => {
       if (idx !== i) return item;
@@ -488,9 +497,16 @@ export default function EditProductForm({
                   step="0.01"
                   min="0"
                   placeholder="Price £"
-                  value={(v.pricePennies / 100).toFixed(2)}
-                  onChange={(e) => updateVariant(i, "pricePennies", e.target.value)}
-                  onBlur={(e) => updateVariant(i, "pricePennies", e.target.value)}
+                  value={variantPriceRaw[i] ?? (v.pricePennies / 100).toFixed(2)}
+                  onChange={(e) => {
+                    const val = e.target.value;
+                    setVariantPriceRaw((r) => r.map((x, idx) => idx === i ? val : x));
+                  }}
+                  onBlur={(e) => {
+                    const val = e.target.value;
+                    setVariantPriceRaw((r) => r.map((x, idx) => idx === i ? val : x));
+                    updateVariant(i, "pricePennies", val);
+                  }}
                   className="w-28 rounded-xl bg-black/30 border border-white/10 px-3 py-2 text-sm text-white outline-none focus:border-white/20"
                 />
                 <button type="button" onClick={() => removeVariant(i)} className="text-red-400 hover:text-red-300 text-xl leading-none px-1">×</button>
