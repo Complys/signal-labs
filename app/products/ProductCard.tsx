@@ -17,7 +17,7 @@ type Props = {
     stock: number;
     isActive: boolean;
     variantsJson?: string | null;
-    allDeals?: Array<{ id: string; specialPrice: number; variantLabel?: string | null; endsAt?: string | null }>;
+    allDeals?: Array<any>;
   };
   basePennies: number;
   dealId: string | null;
