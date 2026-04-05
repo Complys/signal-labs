@@ -23,6 +23,7 @@
     "bcryptjs": "^3.0.3",
     "canvas-confetti": "^1.9.4",
     "dotenv": "^17.2.4",
+    "marked": "^17.0.6",
     "next": "^16.1.6",
     "next-auth": "^4.24.13",
     "prisma": "^5.22.0",

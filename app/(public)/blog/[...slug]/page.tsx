@@ -2,9 +2,7 @@
 import { notFound } from "next/navigation";
 import type { Metadata } from "next";
 import Link from "next/link";
-import ReactMarkdown from "react-markdown";
-import remarkGfm from "remark-gfm";
-import rehypeRaw from "rehype-raw";
+import { marked } from "marked";
 
 import { prisma } from "@/lib/prisma";
 import { absUrl } from "@/lib/site";
@@ -212,41 +210,12 @@ export default async function BlogPostPage(props: PageProps) {
           />
         ) : null}
 
-        <div className="prose prose-lg max-w-none prose-headings:text-[#0B1220] prose-headings:font-semibold prose-headings:tracking-tight prose-p:text-[#0B1220]/80 prose-p:leading-7 prose-li:text-[#0B1220]/80 prose-strong:text-[#0B1220] prose-a:text-blue-600 prose-a:font-medium prose-a:no-underline hover:prose-a:underline prose-h2:text-2xl prose-h2:mt-10 prose-h3:text-xl prose-h3:mt-8 prose-ul:my-4 prose-ol:my-4 prose-li:my-1 prose-table:text-sm prose-th:bg-gray-50 prose-th:font-semibold">
-          <ReactMarkdown
-            remarkPlugins={[remarkGfm]} rehypePlugins={[rehypeRaw]}
-            components={{
-              img: ({ ...props }) => {
-                const src = String(props.src || "");
-                const alt = String(props.alt || "");
-                // eslint-disable-next-line @next/next/no-img-element
-                return (
-                  <img
-                    {...props}
-                    alt={alt}
-                    src={src}
-                    className="my-6 w-full rounded-2xl border border-black/10"
-                  />
-                );
-              },
-              a: ({ href, children }) => {
-                const h = String(href || "");
-                const isExternal = h.startsWith("http");
-                return (
-                  <a
-                    href={h}
-                    target={isExternal ? "_blank" : undefined}
-                    rel={isExternal ? "noopener noreferrer" : undefined}
-                  >
-                    {children}
-                  </a>
-                );
-              },
-            }}
-          >
-            {post.contentMarkdown ?? ""}
-          </ReactMarkdown>
-        </div>
+                <div
+          className="prose prose-lg max-w-none prose-headings:text-[#0B1220] prose-headings:font-semibold prose-headings:tracking-tight prose-p:text-[#0B1220]/80 prose-p:leading-7 prose-li:text-[#0B1220]/80 prose-strong:text-[#0B1220] prose-a:text-blue-600 prose-a:font-medium prose-a:underline prose-h2:text-2xl prose-h2:mt-10 prose-h3:text-xl prose-h3:mt-8 prose-ul:my-4 prose-ol:my-4 prose-li:my-1 prose-table:text-sm prose-th:bg-gray-50 prose-th:font-semibold"
+          dangerouslySetInnerHTML={{
+            __html: marked(post.contentMarkdown ?? "", { breaks: true }) as string,
+          }}
+        />
 
         <div className="mt-10 rounded-2xl border border-black/10 bg-black/[0.02] p-4 text-xs text-black/60">
           <strong className="text-black/70">Disclaimer:</strong> Research use only.
