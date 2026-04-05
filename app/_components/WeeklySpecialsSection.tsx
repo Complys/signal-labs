@@ -361,7 +361,7 @@ function WeeklySpecialTile({
           ) : null}
 
           {reduced && pct > 0 ? (
-            <div className="absolute bottom-3 left-3 rounded-full bg-green-600 px-4 py-2 text-[12px] font-extrabold text-white shadow sm:text-[13px]">
+            <div className="absolute bottom-2 left-2 rounded-full bg-green-600 px-3 py-1.5 text-[11px] font-extrabold text-white shadow">
               -{pct}%
             </div>
           ) : null}
@@ -372,15 +372,15 @@ function WeeklySpecialTile({
             </div>
           ) : null}
 
-          <div className="absolute bottom-3 right-3">
+          <div className="absolute bottom-2 right-2">
             {canPrice ? (
               reduced ? (
-                <div className="rounded-2xl border border-black/10 bg-white/95 px-3 py-2">
-                  <div className="flex items-center justify-end gap-2">
-                    <span className="text-[11px] text-black/45 line-through">
+                <div className="rounded-xl border border-black/10 bg-white/95 px-2.5 py-1.5">
+                  <div className="flex flex-col items-end">
+                    <span className="text-[10px] text-black/45 line-through leading-none">
                       {formatGBPFromPennies(basePennies as number)}
                     </span>
-                    <span className="text-[13px] font-extrabold text-black">
+                    <span className="text-[13px] font-extrabold text-black leading-tight">
                       {formatGBPFromPennies(dealPennies as number)}
                     </span>
                   </div>
