@@ -4,6 +4,7 @@ import type { Metadata } from "next";
 import Link from "next/link";
 import ReactMarkdown from "react-markdown";
 import remarkGfm from "remark-gfm";
+import rehypeRaw from "rehype-raw";
 
 import { prisma } from "@/lib/prisma";
 import { absUrl } from "@/lib/site";
@@ -213,7 +214,7 @@ export default async function BlogPostPage(props: PageProps) {
 
         <div className="prose prose-lg max-w-none prose-headings:text-[#0B1220] prose-headings:font-semibold prose-headings:tracking-tight prose-p:text-[#0B1220]/80 prose-p:leading-7 prose-li:text-[#0B1220]/80 prose-strong:text-[#0B1220] prose-a:text-[#0B1220] prose-a:underline prose-h2:text-2xl prose-h2:mt-10 prose-h3:text-xl prose-h3:mt-8 prose-ul:my-4 prose-ol:my-4 prose-li:my-1">
           <ReactMarkdown
-            remarkPlugins={[remarkGfm]}
+            remarkPlugins={[remarkGfm]} rehypePlugins={[rehypeRaw]}
             components={{
               img: ({ ...props }) => {
                 const src = String(props.src || "");
