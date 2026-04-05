@@ -18,111 +18,116 @@ const geistMono = Geist_Mono({
   subsets: ["latin"],
 });
 
-/**
- * NOTE:
- * - Keep ONE metadata export only
- * - metadataBase is required for absolute OG/canonical generation
- * - Uses NEXT_PUBLIC_SITE_URL (localhost in dev, production domain when live)
- */
 export const metadata: Metadata = {
   metadataBase: new URL(process.env.NEXT_PUBLIC_SITE_URL || "http://localhost:3000"),
   title: {
-    default: "Signal Labs | Research-Use Products and Lab Supplies",
-    template: "%s | Signal Labs",
+    default: "Signal Laboratories | Research Peptides UK",
+    template: "%s | Signal Laboratories",
   },
-  description: "Signal Labs supplies research-use products for laboratory and analytical purposes. Secure checkout and tracked UK dispatch.",
-  applicationName: "Signal Labs",
-  alternates: {
-    canonical: "/",
-  },
+  description: "Signal Laboratories supplies HPLC-verified research peptides for laboratory and analytical research. UK-based. Secure checkout and tracked dispatch.",
+  applicationName: "Signal Laboratories",
+  alternates: { canonical: "/" },
   openGraph: {
     type: "website",
-    siteName: "Signal Labs",
-    title: "Signal Labs | Research-Use Products and Lab Supplies",
-    description: "Signal Labs supplies research-use products for laboratory and analytical purposes. Secure checkout and tracked UK dispatch.",
+    siteName: "Signal Laboratories",
+    title: "Signal Laboratories | Research Peptides UK",
+    description: "Signal Laboratories supplies HPLC-verified research peptides for laboratory and analytical research. UK-based. Secure checkout and tracked dispatch.",
     url: "/",
-    images: [
-      {
-        url: "/signal-banner.png",
-        width: 1200,
-        height: 630,
-        alt: "Signal Labs",
-      },
-    ],
+    images: [{ url: "/signal-banner.png", width: 1200, height: 630, alt: "Signal Laboratories" }],
   },
   twitter: {
     card: "summary_large_image",
-    title: "Signal Labs | Research-Use Products and Lab Supplies",
-    description: "Signal Labs supplies research-use products for laboratory and analytical purposes. Secure checkout and tracked UK dispatch.",
+    title: "Signal Laboratories | Research Peptides UK",
+    description: "Signal Laboratories supplies HPLC-verified research peptides for laboratory and analytical research. UK-based. Secure checkout and tracked dispatch.",
     images: ["/signal-banner.png"],
   },
   keywords: [
     "research peptides UK",
-    "research use only peptides",
     "buy research peptides UK",
-    "peptide purity testing",
-    "COA peptides UK",
-    "laboratory research supplies UK",
-    "analytical research compounds",
+    "BPC-157 UK",
+    "TB-500 UK",
+    "peptide purity HPLC",
+    "research use only peptides",
+    "laboratory research compounds UK",
+    "analytical research peptides",
+    "GHK-Cu UK",
+    "ipamorelin UK",
   ],
+};
+
+const organizationJsonLd = {
+  "@context": "https://schema.org",
+  "@type": "Organization",
+  name: "Signal Laboratories",
+  url: "https://signallaboratories.co.uk",
+  logo: "https://signallaboratories.co.uk/signal-banner.png",
+  description: "UK supplier of HPLC-verified research peptides for laboratory and analytical research purposes.",
+  address: {
+    "@type": "PostalAddress",
+    addressCountry: "GB",
+  },
+  contactPoint: {
+    "@type": "ContactPoint",
+    email: "support@signallaboratories.co.uk",
+    contactType: "customer support",
+  },
+  sameAs: [],
+};
+
+const websiteJsonLd = {
+  "@context": "https://schema.org",
+  "@type": "WebSite",
+  name: "Signal Laboratories",
+  url: "https://signallaboratories.co.uk",
+  potentialAction: {
+    "@type": "SearchAction",
+    target: {
+      "@type": "EntryPoint",
+      urlTemplate: "https://signallaboratories.co.uk/products?q={search_term_string}",
+    },
+    "query-input": "required name=search_term_string",
+  },
+};
+
+
+const organizationJsonLd = {
+  "@context": "https://schema.org",
+  "@type": "Organization",
+  name: "Signal Laboratories",
+  url: "https://signallaboratories.co.uk",
+  logo: "https://signallaboratories.co.uk/signal-banner.png",
+  description: "UK supplier of HPLC-verified research peptides for laboratory and analytical research purposes.",
+  address: { "@type": "PostalAddress", addressCountry: "GB" },
+  contactPoint: { "@type": "ContactPoint", email: "support@signallaboratories.co.uk", contactType: "customer support" },
+};
+
+const websiteJsonLd = {
+  "@context": "https://schema.org",
+  "@type": "WebSite",
+  name: "Signal Laboratories",
+  url: "https://signallaboratories.co.uk",
+  potentialAction: {
+    "@type": "SearchAction",
+    target: { "@type": "EntryPoint", urlTemplate: "https://signallaboratories.co.uk/products?q={search_term_string}" },
+    "query-input": "required name=search_term_string",
+  },
 };
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
     <html lang="en" className={`${geistSans.variable} ${geistMono.variable}`}>
       <body className="antialiased">
+        <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(organizationJsonLd) }} />
+        <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(websiteJsonLd) }} />
+        <script
+          type="application/ld+json"
+          dangerouslySetInnerHTML={{ __html: JSON.stringify(organizationJsonLd) }}
+        />
+        <script
+          type="application/ld+json"
+          dangerouslySetInnerHTML={{ __html: JSON.stringify(websiteJsonLd) }}
+        />
         <Providers>
-          {/* Public site chrome (your component hides itself on /admin/*) */}
           <SiteChrome />
-
           <main>{children}</main>
-
           <footer className="mt-20 border-t border-black/10 bg-white">
-            <div className="mx-auto max-w-6xl px-6 py-10">
-              <div className="grid gap-8 sm:grid-cols-3 text-sm">
-                <div>
-                  <div className="font-semibold text-black/80 mb-3">Signal Labs</div>
-                  <div className="space-y-2 text-black/55">
-                    <div><Link href="/products" className="hover:text-black">Products</Link></div>
-                    <div><Link href="/quality" className="hover:text-black">Quality and Testing</Link></div>
-                    <div><Link href="/verification" className="hover:text-black">Verification Standards</Link></div>
-                    <div><Link href="/research-use-policy" className="hover:text-black">Research-use Policy</Link></div>
-                  </div>
-                </div>
-                <div>
-                  <div className="font-semibold text-black/80 mb-3">Resources</div>
-                  <div className="space-y-2 text-black/55">
-                    <div><Link href="/blog" className="hover:text-black">Research Articles</Link></div>
-                    <div><Link href="/blog/guides/what-are-research-peptides-uk" className="hover:text-black">What Are Research Peptides?</Link></div>
-                    <div><Link href="/support" className="hover:text-black">Support</Link></div>
-                    <div><Link href="/affiliates/apply" className="hover:text-black">Affiliate Programme</Link></div>
-                  </div>
-                </div>
-                <div>
-                  <div className="font-semibold text-black/80 mb-3">Legal</div>
-                  <div className="space-y-2 text-black/55">
-                    <div><Link href="/research-use-policy" className="hover:text-black">Research-use Policy</Link></div>
-                    <div><Link href="/affiliate-terms" className="hover:text-black">Affiliate Terms</Link></div>
-                  </div>
-                  <div className="mt-4 text-xs text-black/40 leading-relaxed">
-                    All products supplied strictly for laboratory and analytical research purposes only. Not for human or veterinary consumption.
-                  </div>
-                </div>
-              </div>
-              <div className="mt-8 border-t border-black/10 pt-6">
-                <div className="mb-6 rounded-2xl border border-black/10 bg-[#F6F8FB] px-6 py-5">
-                  <div className="text-sm font-semibold text-black/80 mb-1">Stay updated</div>
-                  <p className="text-xs text-black/55 mb-3">Research updates, new products, and restock notifications.</p>
-                  <NewsletterSignup />
-                </div>
-                <div className="text-center text-xs text-black/40">
-                © {new Date().getFullYear()} Signal Labs. All rights reserved.
-                </div>
-              </div>
-            </div>
-          </footer>
-        </Providers>
-      </body>
-    </html>
-  );
-}
