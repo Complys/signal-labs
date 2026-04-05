@@ -105,11 +105,7 @@ export default function ShippingNotice({
       setLoaded(true);
     })();
 
-    return (
-    <>
-    <div className="mb-2 rounded-xl border border-emerald-200 bg-emerald-50 px-3 py-2 text-xs font-semibold text-emerald-800">
-      🚚 Order before 3pm for next day delivery on in-stock items
-    </div>) => {
+    return () => {
       alive = false;
     };
   }, []);
@@ -237,7 +233,6 @@ export default function ShippingNotice({
         </div>
       ) : null}
     </div>
-  </>
   );
 }
 
