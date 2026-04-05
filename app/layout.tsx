@@ -62,10 +62,7 @@ const organizationJsonLd = {
   url: "https://signallaboratories.co.uk",
   logo: "https://signallaboratories.co.uk/signal-banner.png",
   description: "UK supplier of HPLC-verified research peptides for laboratory and analytical research purposes.",
-  address: {
-    "@type": "PostalAddress",
-    addressCountry: "GB",
-  },
+  address: { "@type": "PostalAddress", addressCountry: "GB" },
   contactPoint: {
     "@type": "ContactPoint",
     email: "support@signallaboratories.co.uk",
@@ -89,36 +86,10 @@ const websiteJsonLd = {
   },
 };
 
-
-const organizationJsonLd = {
-  "@context": "https://schema.org",
-  "@type": "Organization",
-  name: "Signal Laboratories",
-  url: "https://signallaboratories.co.uk",
-  logo: "https://signallaboratories.co.uk/signal-banner.png",
-  description: "UK supplier of HPLC-verified research peptides for laboratory and analytical research purposes.",
-  address: { "@type": "PostalAddress", addressCountry: "GB" },
-  contactPoint: { "@type": "ContactPoint", email: "support@signallaboratories.co.uk", contactType: "customer support" },
-};
-
-const websiteJsonLd = {
-  "@context": "https://schema.org",
-  "@type": "WebSite",
-  name: "Signal Laboratories",
-  url: "https://signallaboratories.co.uk",
-  potentialAction: {
-    "@type": "SearchAction",
-    target: { "@type": "EntryPoint", urlTemplate: "https://signallaboratories.co.uk/products?q={search_term_string}" },
-    "query-input": "required name=search_term_string",
-  },
-};
-
 export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
     <html lang="en" className={`${geistSans.variable} ${geistMono.variable}`}>
       <body className="antialiased">
-        <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(organizationJsonLd) }} />
-        <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(websiteJsonLd) }} />
         <script
           type="application/ld+json"
           dangerouslySetInnerHTML={{ __html: JSON.stringify(organizationJsonLd) }}
@@ -131,3 +102,52 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
           <SiteChrome />
           <main>{children}</main>
           <footer className="mt-20 border-t border-black/10 bg-white">
+            <div className="mx-auto max-w-7xl px-6 py-12">
+              <div className="grid grid-cols-2 gap-8 md:grid-cols-4">
+                <div>
+                  <p className="text-sm font-semibold text-[#0B1220]">Signal Laboratories</p>
+                  <p className="mt-3 text-xs leading-relaxed text-[#0B1220]/60">
+                    HPLC-verified research peptides for laboratory and analytical research purposes.
+                  </p>
+                </div>
+                <div>
+                  <p className="text-sm font-semibold text-[#0B1220]">Products</p>
+                  <ul className="mt-3 space-y-2">
+                    <li><Link href="/products" className="text-xs text-[#0B1220]/60 hover:text-[#0B1220]">All Products</Link></li>
+                    <li><Link href="/quality" className="text-xs text-[#0B1220]/60 hover:text-[#0B1220]">Quality &amp; Purity</Link></li>
+                    <li><Link href="/verification" className="text-xs text-[#0B1220]/60 hover:text-[#0B1220]">Verification</Link></li>
+                  </ul>
+                </div>
+                <div>
+                  <p className="text-sm font-semibold text-[#0B1220]">Research</p>
+                  <ul className="mt-3 space-y-2">
+                    <li><Link href="/blog" className="text-xs text-[#0B1220]/60 hover:text-[#0B1220]">Research Articles</Link></li>
+                    <li><Link href="/research-use-policy" className="text-xs text-[#0B1220]/60 hover:text-[#0B1220]">Research Use Policy</Link></li>
+                  </ul>
+                </div>
+                <div>
+                  <p className="text-sm font-semibold text-[#0B1220]">Support</p>
+                  <ul className="mt-3 space-y-2">
+                    <li><Link href="/support" className="text-xs text-[#0B1220]/60 hover:text-[#0B1220]">Contact</Link></li>
+                    <li><Link href="/affiliates/apply" className="text-xs text-[#0B1220]/60 hover:text-[#0B1220]">Affiliates</Link></li>
+                  </ul>
+                </div>
+              </div>
+              <div className="mt-8 border-t border-black/10 pt-8">
+                <NewsletterSignup />
+              </div>
+              <div className="mt-8 flex flex-wrap items-center justify-between gap-4 border-t border-black/10 pt-8">
+                <p className="text-xs text-[#0B1220]/50">
+                  &copy; {new Date().getFullYear()} Signal Laboratories. For research use only.
+                </p>
+                <p className="text-xs text-[#0B1220]/50">
+                  All products are for laboratory and analytical research purposes only. Not for human or veterinary use.
+                </p>
+              </div>
+            </div>
+          </footer>
+        </Providers>
+      </body>
+    </html>
+  );
+}
