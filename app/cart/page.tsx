@@ -581,6 +581,11 @@ export default function CartPage() {
             {/* Multi-buy discount tiers */}
             <MultiBuyBanner cartPennies={subtotalPennies} />
 
+            {/* Next day delivery notice */}
+            <div className="rounded-2xl border border-emerald-200 bg-emerald-50 px-4 py-3 text-xs font-semibold text-emerald-800">
+              🚚 Order before 3pm for next day delivery on in-stock items
+            </div>
+
             {/* Totals */}
             <div className="rounded-3xl border border-black/10 bg-white p-5 shadow-sm">
               <div className="space-y-2 text-sm">
