@@ -211,7 +211,7 @@ function WeeklySpecialTile({
               />
             ) : null}
 
-            <div className="absolute top-3 left-3 rounded-full bg-black/90 px-3 py-1 text-[11px] font-semibold text-white">
+            <div className="absolute top-3 left-3 rounded-full bg-black/90 px-3 py-1 text-[11px] font-semibold text-white hidden sm:block">
               Weekly Special
             </div>
 
