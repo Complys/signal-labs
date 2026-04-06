@@ -661,11 +661,17 @@ model PostageBand {
 // Page View Analytics
 // =========================
 model PageView {
-  id        String   @id @default(cuid())
-  path      String
-  referrer  String?
-  country   String?
-  createdAt DateTime @default(now())
+  id              String   @id @default(cuid())
+  path            String
+  referrer        String?
+  country         String?
+  durationSeconds Int?     // time spent on page in seconds
+  utmSource   String?  // google, meta, facebook etc
+  utmMedium   String?  // cpc, email, social
+  utmCampaign String?  // campaign name
+  utmContent  String?  // ad variant
+  utmTerm     String?  // keyword
+  createdAt   DateTime @default(now())
 
   @@index([path, createdAt])
   @@index([createdAt])
@@ -690,5 +696,19 @@ model CartItem {
   @@unique([sessionId, productId, variantLabel])
   @@index([sessionId])
   @@index([userId])
+  @@index([createdAt])
+}
+
+// =========================
+// Newsletter Subscribers
+// =========================
+model NewsletterSubscriber {
+  id         String   @id @default(cuid())
+  email      String   @unique
+  firstName  String?
+  source     String?  @default("website") // website | checkout | popup
+  subscribed Boolean  @default(true)
+  createdAt  DateTime @default(now())
+
   @@index([createdAt])
 }

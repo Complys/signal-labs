@@ -79,6 +79,7 @@ const MAIN_NAV: NavItem[] = [
   { label: "Waitlist", href: "/admin/waitlist" },
   { label: "Weekly Specials", href: "/admin/deals" },
   { label: "Orders", href: "/admin/orders" },
+  { label: "Customers", href: "/admin/customers" },
   { label: "Analytics", href: "/admin/analytics", hint: "Includes affiliate stats" },
 ];
 
@@ -92,6 +93,7 @@ const AFFILIATE_NAV: NavItem[] = [
 
 const SETTINGS_NAV: NavItem[] = [
   { label: "Shipping", href: "/admin/shipping" },
+  { label: "Subscribers", href: "/admin/subscribers" },
   { label: "Users", href: "/admin/users" },
   { label: "Announcement Bar", href: "/admin/settings/announcement" },
   { label: "Multi-buy Discounts", href: "/admin/settings/multibuy" },

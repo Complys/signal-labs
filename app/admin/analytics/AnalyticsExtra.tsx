@@ -4,7 +4,8 @@ import { useEffect, useState } from "react";
 type PageRow = { path: string; count: number; productName: string | null };
 type ReferrerRow = { referrer: string | null; keyword: string | null; count: number };
 type AbandonedSession = { sessionId: string; items: { name: string; variantLabel: string | null; quantity: number; pricePennies: number }[]; total: number; date: string };
-type Data = { topPages: PageRow[]; totalPageViews: number; topReferrers: ReferrerRow[]; abandonedSessions: AbandonedSession[] };
+type UTMRow = { utmSource: string | null; utmMedium: string | null; utmCampaign: string | null; _count: { utmSource: number } };
+type Data = { topPages: PageRow[]; totalPageViews: number; topReferrers: ReferrerRow[]; abandonedSessions: AbandonedSession[]; utmCampaigns: UTMRow[] };
 
 const SITE = "https://signallaboratories.co.uk";
 
@@ -78,6 +79,34 @@ export default function AnalyticsExtra({ days }: { days: number }) {
           )}
         </div>
       </section>
+
+      {/* UTM CAMPAIGNS */}
+      {data.utmCampaigns && data.utmCampaigns.length > 0 && (
+        <section className="mt-8">
+          <h2 className="text-base font-semibold text-white mb-1">Ad campaigns</h2>
+          <p className="text-xs text-white/40 mb-3">Visits from UTM-tagged links — Google Ads, Meta Ads, email etc</p>
+          <div className="overflow-hidden rounded-xl border border-white/10 bg-white/5">
+            <table style={{ width: "100%", borderCollapse: "collapse", fontSize: 13 }}>
+              <thead><tr style={{ borderBottom: "1px solid rgba(255,255,255,0.08)" }}>
+                <th style={{ padding: "10px 16px", textAlign: "left", color: "rgba(255,255,255,0.4)", fontWeight: 600, fontSize: 11, textTransform: "uppercase" }}>Source</th>
+                <th style={{ padding: "10px 16px", textAlign: "left", color: "rgba(255,255,255,0.4)", fontWeight: 600, fontSize: 11, textTransform: "uppercase" }}>Medium</th>
+                <th style={{ padding: "10px 16px", textAlign: "left", color: "rgba(255,255,255,0.4)", fontWeight: 600, fontSize: 11, textTransform: "uppercase" }}>Campaign</th>
+                <th style={{ padding: "10px 16px", textAlign: "right", color: "rgba(255,255,255,0.4)", fontWeight: 600, fontSize: 11, textTransform: "uppercase" }}>Visits</th>
+              </tr></thead>
+              <tbody>{data.utmCampaigns.map((u, i) => (
+                <tr key={i} style={{ borderBottom: i < data.utmCampaigns.length - 1 ? "1px solid rgba(255,255,255,0.06)" : "none" }}>
+                  <td style={{ padding: "9px 16px" }}>
+                    <span style={{ fontSize: 12, background: u.utmSource?.includes("google") ? "rgba(66,133,244,0.15)" : u.utmSource?.includes("meta") || u.utmSource?.includes("facebook") ? "rgba(24,119,242,0.15)" : "rgba(255,255,255,0.08)", padding: "2px 8px", borderRadius: 4, color: "#fff" }}>{u.utmSource}</span>
+                  </td>
+                  <td style={{ padding: "9px 16px", color: "rgba(255,255,255,0.5)", fontSize: 12 }}>{u.utmMedium || "—"}</td>
+                  <td style={{ padding: "9px 16px", color: "rgba(255,255,255,0.7)", fontSize: 12 }}>{u.utmCampaign || "—"}</td>
+                  <td style={{ padding: "9px 16px", textAlign: "right", fontWeight: 600, color: "#fff" }}>{u._count.utmSource}</td>
+                </tr>
+              ))}</tbody>
+            </table>
+          </div>
+        </section>
+      )}
 
       {/* ABANDONED BASKETS */}
       <section className="mt-8 mb-10">

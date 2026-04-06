@@ -97,5 +97,15 @@ export async function GET(req: Request) {
     date: items[0].createdAt,
   }));
 
-  return NextResponse.json({ topPages, totalPageViews, topReferrers, abandonedSessions });
+
+  // UTM campaign breakdown
+  const utmCampaigns = await prisma.pageView.groupBy({
+    by: ["utmSource", "utmMedium", "utmCampaign"],
+    _count: { utmSource: true },
+    where: { createdAt: { gte: start }, utmSource: { not: null } },
+    orderBy: { _count: { utmSource: "desc" } },
+    take: 20,
+  });
+
+  return NextResponse.json({ topPages, totalPageViews, topReferrers, abandonedSessions, utmCampaigns });
 }
