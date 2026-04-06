@@ -92,6 +92,7 @@ const AFFILIATE_NAV: NavItem[] = [
 
 const SETTINGS_NAV: NavItem[] = [
   { label: "Shipping", href: "/admin/shipping" },
+  { label: "Users", href: "/admin/users" },
   { label: "Announcement Bar", href: "/admin/settings/announcement" },
   { label: "Multi-buy Discounts", href: "/admin/settings/multibuy" },
 ];
@@ -109,8 +110,11 @@ export default async function AdminLayout({ children }: { children: ReactNode })
   const session = await getServerSession(authOptions);
 
   if (!session) redirect("/admin-login");
-  if ((session.user as any)?.role !== "ADMIN") redirect("/");
+  const role = (session.user as any)?.role ?? "USER";
+  if (role !== "ADMIN" && role !== "FULFILMENT") redirect("/");
 
+  const role = (session.user as any)?.role ?? "USER";
+  const isFulfilment = role === "FULFILMENT";
   const isActive = (href: string) => pathname === href || pathname.startsWith(href + "/");
 
   return (
