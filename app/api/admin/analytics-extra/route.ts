@@ -82,7 +82,7 @@ export async function GET(req: Request) {
       count: r._count.referrer,
       raw: r.referrer,
     }))
-    .filter(r => r.referrer && !r.referrer.includes("signallaboratories"));
+    .filter(r => r.referrer && !r.referrer.includes("signallaboratories") && !r.referrer.includes("vercel.app") && !r.referrer.includes("localhost"));
 
   // Group abandoned by session
   const bySession: Record<string, typeof abandonedRaw> = {};
