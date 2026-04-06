@@ -271,6 +271,7 @@ export default async function ProductsPage({
                   isBackOrder={isBackOrder}
                   disabled={disabled}
                   maxQty={maxQty}
+                  orderCount={(p as any)._count?.orderItems ?? 0}
                 />
               );
             })}
