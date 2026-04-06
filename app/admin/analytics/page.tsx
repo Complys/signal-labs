@@ -1,5 +1,6 @@
 // app/admin/analytics/page.tsx
 import Link from "next/link";
+import AnalyticsExtra from "./AnalyticsExtra";
 import { prisma } from "@/lib/prisma";
 import AnalyticsCharts from "./AnalyticsCharts";
 import RangePicker from "./RangePicker";
@@ -650,6 +651,8 @@ export default async function AdminAnalyticsPage(props: {
       </div>
 
       <div className="mt-6 text-xs text-white/40">Total orders (all time): {ordersTotal}</div>
+
+        <AnalyticsExtra days={days} />
     </div>
   );
 }
