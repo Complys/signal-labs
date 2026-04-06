@@ -112,8 +112,8 @@ export default function ProductCard({
             </div>
           )}
           {allOutOfStock && (
-            <div className="absolute bottom-3 left-3 z-20 rounded-full bg-amber-500 px-3 py-1 text-[11px] font-semibold text-white">
-              Back order
+            <div className="absolute bottom-3 left-3 z-20 rounded-full bg-blue-600 px-3 py-1.5 text-[11px] font-bold text-white shadow-sm">
+              📦 Pre-order
             </div>
           )}
           {isAdmin && !product.isActive && (

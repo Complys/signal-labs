@@ -679,10 +679,117 @@ function MiniCard({ title, value, sub }: { title: string; value: string; sub?: s
 }
 
 function MiniStat({ label, value }: { label: string; value: number }) {
+  // Page views
+  const topPages = await prisma.pageView.groupBy({
+    by: ['path'],
+    _count: { path: true },
+    where: { createdAt: { gte: range.start, lt: range.end } },
+    orderBy: { _count: { path: 'desc' } },
+    take: 20,
+  });
+  const totalPageViews = await prisma.pageView.count({
+    where: { createdAt: { gte: range.start, lt: range.end } },
+  });
+  const uniquePaths = await prisma.pageView.findMany({
+    where: { createdAt: { gte: range.start, lt: range.end } },
+    select: { path: true },
+    distinct: ['path'],
+  });
+
+  // Abandoned baskets — cart items not converted to orders in last 7 days
+  const abandonedCutoff = new Date(Date.now() - 7 * 24 * 60 * 60 * 1000);
+  const abandonedItems = await prisma.cartItem.findMany({
+    where: { createdAt: { gte: abandonedCutoff } },
+    include: { product: { select: { name: true, price: true } } },
+    orderBy: { createdAt: 'desc' },
+    take: 50,
+  });
+  // Group by session
+  const abandonedBySessions = abandonedItems.reduce((acc: Record<string, any[]>, item) => {
+    if (!acc[item.sessionId]) acc[item.sessionId] = [];
+    acc[item.sessionId].push(item);
+    return acc;
+  }, {});
+  const abandonedSessions = Object.entries(abandonedBySessions).map(([sid, items]) => ({
+    sessionId: sid.slice(-8),
+    items,
+    total: (items as any[]).reduce((s: number, i: any) => s + i.pricePennies * i.quantity, 0),
+    date: (items as any[])[0].createdAt,
+  }));
+
   return (
     <div className="rounded-xl bg-black/5 p-3">
       <div className="text-xs font-medium text-black/60">{label}</div>
       <div className="mt-1 text-xl font-semibold text-black">{value}</div>
     </div>
   );
+
+        {/* PAGE VIEWS SECTION */}
+        <section style={{ marginTop: 40 }}>
+          <h2 style={{ fontSize: 16, fontWeight: 600, marginBottom: 4 }}>Page views</h2>
+          <p style={{ fontSize: 12, color: 'rgba(0,0,0,0.4)', marginBottom: 16 }}>
+            {totalPageViews} total views · {uniquePaths.length} unique pages in selected range
+          </p>
+          <div style={{ background: '#fff', border: '1px solid rgba(0,0,0,0.08)', borderRadius: 12, overflow: 'hidden' }}>
+            <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: 13 }}>
+              <thead>
+                <tr style={{ borderBottom: '1px solid rgba(0,0,0,0.07)', background: '#fafafa' }}>
+                  <th style={{ padding: '10px 16px', textAlign: 'left', color: 'rgba(0,0,0,0.4)', fontWeight: 600, fontSize: 11, textTransform: 'uppercase', letterSpacing: '0.05em' }}>Page</th>
+                  <th style={{ padding: '10px 16px', textAlign: 'right', color: 'rgba(0,0,0,0.4)', fontWeight: 600, fontSize: 11, textTransform: 'uppercase', letterSpacing: '0.05em' }}>Views</th>
+                  <th style={{ padding: '10px 16px', textAlign: 'right', color: 'rgba(0,0,0,0.4)', fontWeight: 600, fontSize: 11, textTransform: 'uppercase', letterSpacing: '0.05em' }}>Share</th>
+                </tr>
+              </thead>
+              <tbody>
+                {topPages.length === 0 && (
+                  <tr><td colSpan={3} style={{ padding: 24, textAlign: 'center', color: 'rgba(0,0,0,0.3)', fontSize: 13 }}>No page view data yet — tracking starts automatically once deployed</td></tr>
+                )}
+                {topPages.map((p, i) => (
+                  <tr key={p.path} style={{ borderBottom: i < topPages.length - 1 ? '1px solid rgba(0,0,0,0.05)' : 'none' }}>
+                    <td style={{ padding: '10px 16px' }}>
+                      <span style={{ fontFamily: 'monospace', fontSize: 12, background: 'rgba(0,0,0,0.04)', padding: '2px 6px', borderRadius: 4 }}>{p.path}</span>
+                    </td>
+                    <td style={{ padding: '10px 16px', textAlign: 'right', fontWeight: 600 }}>{p._count.path}</td>
+                    <td style={{ padding: '10px 16px', textAlign: 'right', color: 'rgba(0,0,0,0.4)' }}>
+                      {totalPageViews > 0 ? Math.round(p._count.path / totalPageViews * 100) : 0}%
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        </section>
+
+        {/* ABANDONED BASKETS SECTION */}
+        <section style={{ marginTop: 40, marginBottom: 40 }}>
+          <h2 style={{ fontSize: 16, fontWeight: 600, marginBottom: 4 }}>Abandoned baskets</h2>
+          <p style={{ fontSize: 12, color: 'rgba(0,0,0,0.4)', marginBottom: 16 }}>
+            Items added to cart in the last 7 days that haven&apos;t converted to orders. {abandonedSessions.length} sessions.
+          </p>
+          {abandonedSessions.length === 0 ? (
+            <div style={{ background: '#fff', border: '1px solid rgba(0,0,0,0.08)', borderRadius: 12, padding: 24, textAlign: 'center', color: 'rgba(0,0,0,0.3)', fontSize: 13 }}>
+              No abandoned baskets yet — tracking will show here once customers add items to cart
+            </div>
+          ) : (
+            <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
+              {abandonedSessions.map((session) => (
+                <div key={session.sessionId} style={{ background: '#fff', border: '1px solid rgba(0,0,0,0.08)', borderRadius: 12, padding: '14px 16px' }}>
+                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 8 }}>
+                    <span style={{ fontSize: 12, color: 'rgba(0,0,0,0.4)', fontFamily: 'monospace' }}>Session ...{session.sessionId}</span>
+                    <div style={{ display: 'flex', gap: 16, alignItems: 'center' }}>
+                      <span style={{ fontSize: 12, color: 'rgba(0,0,0,0.4)' }}>{new Date(session.date).toLocaleDateString('en-GB')} {new Date(session.date).toLocaleTimeString('en-GB', { hour: '2-digit', minute: '2-digit' })}</span>
+                      <span style={{ fontWeight: 700, fontSize: 14, color: '#0B1220' }}>£{(session.total / 100).toFixed(2)}</span>
+                    </div>
+                  </div>
+                  <div style={{ display: 'flex', flexWrap: 'wrap', gap: 6 }}>
+                    {(session.items as any[]).map((item: any, i: number) => (
+                      <span key={i} style={{ fontSize: 12, background: 'rgba(0,0,0,0.04)', padding: '3px 10px', borderRadius: 20, color: 'rgba(0,0,0,0.7)' }}>
+                        {item.product.name}{item.variantLabel ? ` (${item.variantLabel})` : ''} × {item.quantity}
+                      </span>
+                    ))}
+                  </div>
+                </div>
+              ))}
+            </div>
+          )}
+        </section>
 }

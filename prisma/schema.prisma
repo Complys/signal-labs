@@ -38,6 +38,7 @@ model Product {
   deals          Deal[]
   stockInterests StockInterest[]
   stockPurchases StockPurchase[]
+  cartItems      CartItem[]
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
@@ -667,5 +668,27 @@ model PageView {
   createdAt DateTime @default(now())
 
   @@index([path, createdAt])
+  @@index([createdAt])
+}
+
+// =========================
+// Abandoned basket tracking
+// =========================
+model CartItem {
+  id        String   @id @default(cuid())
+  sessionId String   // anonymous session ID from cookie
+  userId    String?  // if logged in
+  productId String
+  variantLabel String?
+  quantity  Int      @default(1)
+  pricePennies Int
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  product   Product  @relation(fields: [productId], references: [id], onDelete: Cascade)
+
+  @@unique([sessionId, productId, variantLabel])
+  @@index([sessionId])
+  @@index([userId])
   @@index([createdAt])
 }
