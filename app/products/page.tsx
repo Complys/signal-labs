@@ -189,7 +189,8 @@ export default async function ProductsPage({
                 defaultValue={sort}
                 className="rounded-2xl border border-black/15 bg-white px-3 py-3 text-sm outline-none focus:border-black/30"
               >
-                <option value="az">A — Z</option>
+                <option value="stock_first">In Stock First</option>
+                  <option value="az">A — Z</option>
                 <option value="za">Z — A</option>
                 <option value="price_asc">Price: Low to High</option>
                 <option value="price_desc">Price: High to Low</option>
