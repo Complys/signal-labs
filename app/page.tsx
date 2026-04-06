@@ -34,7 +34,7 @@ const categories = [
   },
   {
     title: "Melanocortin",
-    desc: "MT-1, MT-2, PT-141, KPV, Kisspeptin-10",
+    desc: "KPV, Kisspeptin-10, DSIP, Selank, Semax",
     href: "/products",
   },
   {
