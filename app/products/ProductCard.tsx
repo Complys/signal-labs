@@ -120,9 +120,10 @@ export default function ProductCard({
             </div>
           )}
 
-          {/* Offer price badge — top right corner */}
+          {/* Multi-buy badge — shows best discount at £500+ spend (30% off) */}
           <div className="absolute top-0 right-0 z-[1] bg-emerald-600 text-white rounded-bl-2xl px-3 py-2 text-center">
-            <div className="text-[10px] font-bold uppercase tracking-wide leading-none">With offer</div>
+            <div className="text-[10px] font-bold uppercase tracking-wide leading-none">Multi-buy</div>
+            <div className="text-[10px] leading-none mt-0.5 opacity-80">spend £500+</div>
             <div className="text-sm font-extrabold leading-tight mt-0.5">
               {hasVariants
                 ? (selectedVariant ? fmt(Math.round(selectedVariant.pricePennies * 0.7)) : `From ${fmt(Math.round(fromPrice * 0.7))}`)
