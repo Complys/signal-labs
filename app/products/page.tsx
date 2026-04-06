@@ -114,7 +114,6 @@ export default async function ProductsPage({
                sort === "price_asc" ? [{ price: "asc" }] :
                sort === "price_desc" ? [{ price: "desc" }] :
                sort === "newest" ? [{ createdAt: "desc" }] :
-               sort === "stock_first" ? [{ stock: "desc" }, { name: "asc" }] :
                [{ name: "asc" }],
     include: {
       _count: { select: { orderItems: true } },
@@ -237,7 +236,25 @@ export default async function ProductsPage({
           </div>
         ) : (
           <div className="grid grid-cols-2 gap-4 sm:grid-cols-3 lg:grid-cols-4">
-            {products.map((p) => {
+            {(sort === "stock_first"
+              ? [...products].sort((a, b) => {
+                  // Parse variants to check stock
+                  const hasStock = (p: any) => {
+                    if (p.variantsJson) {
+                      try {
+                        const v = JSON.parse(p.variantsJson);
+                        if (Array.isArray(v)) return v.some((v: any) => (v.stock ?? 0) > 0);
+                      } catch {}
+                    }
+                    return (typeof p.stock === 'number' ? p.stock : 0) > 0;
+                  };
+                  const aStock = hasStock(a) ? 1 : 0;
+                  const bStock = hasStock(b) ? 1 : 0;
+                  if (bStock !== aStock) return bStock - aStock;
+                  return a.name.localeCompare(b.name);
+                })
+              : products
+            ).map((p) => {
               const stock = typeof p.stock === "number" ? p.stock : 0;
               const isBackOrder = stock <= 0;
               const isInactive = p.isActive === false;
