@@ -10,6 +10,7 @@ import StockNotifyButton from "@/app/_components/StockNotifyButton";
 type Variant = { label: string; pricePennies: number; image?: string };
 
 type Props = {
+  orderCount?: number;
   product: {
     id: string;
     name: string;
@@ -34,6 +35,7 @@ type Props = {
 function fmt(p: number) { return `£${(p / 100).toFixed(2)}`; }
 
 export default function ProductCard({
+  orderCount = 0,
   product, basePennies, dealId, dealEndsAt, reduced, dealPennies, pct,
   isAdmin, isBackOrder, disabled, maxQty,
 }: Props) {
@@ -131,6 +133,11 @@ export default function ProductCard({
               }
             </div>
           </div>
+          {orderCount >= 5 && (
+            <div className="absolute bottom-3 right-3 z-20 rounded-full bg-orange-500 px-3 py-1 text-[11px] font-semibold text-white shadow-sm animate-pulse">
+              🔥 Selling fast
+            </div>
+          )}
           {displayImage ? (
             <Image
               key={displayImage}

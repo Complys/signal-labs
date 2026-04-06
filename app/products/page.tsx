@@ -87,7 +87,7 @@ export default async function ProductsPage({
 
   const q = (spValue(sp, "q") || "").trim();
   const activeOnly = spValue(sp, "activeOnly") === "1";
-  const sort = spValue(sp, "sort") || "az";
+  const sort = spValue(sp, "sort") || "stock_first";
 
   const session = await getSessionFromApi();
   const isAdmin = session?.user?.role === "ADMIN";
@@ -114,8 +114,10 @@ export default async function ProductsPage({
                sort === "price_asc" ? [{ price: "asc" }] :
                sort === "price_desc" ? [{ price: "desc" }] :
                sort === "newest" ? [{ createdAt: "desc" }] :
+               sort === "stock_first" ? [{ stock: "desc" }, { name: "asc" }] :
                [{ name: "asc" }],
     include: {
+      _count: { select: { orderItems: true } },
       deals: {
         where: {
           isActive: true,

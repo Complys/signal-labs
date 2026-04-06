@@ -7,6 +7,7 @@ import Link from "next/link";
 import NewsletterSignup from "./_components/NewsletterSignup";
 import { Providers } from "./providers";
 import SiteChrome from "./_components/SiteChrome";
+import PageTracker from "./_components/PageTracker";
 
 const geistSans = Geist({
   variable: "--font-geist-sans",
@@ -100,6 +101,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
         />
         <Providers>
           <SiteChrome />
+          <PageTracker />
           <main>{children}</main>
           <footer className="mt-20 border-t border-black/10 bg-white">
             <div className="mx-auto max-w-7xl px-6 py-12">
