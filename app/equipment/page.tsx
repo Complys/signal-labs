@@ -1,4 +1,4 @@
-// web/app/products/page.tsx
+// web/app/equipment/page.tsx
 import Link from "next/link";
 import { cookies, headers } from "next/headers";
 import { prisma } from "@/lib/prisma";
@@ -11,8 +11,8 @@ export const dynamic = "force-dynamic";
 export const runtime = "nodejs";
 
 export const metadata = {
-  title: "Research Peptides UK | Signal Labs",
-  description: "Browse HPLC-verified research peptides from Signal Labs. BPC-157, TB-500, GHK-Cu, CJC-1295 and more. UK-based, tracked dispatch.",
+  title: "Research Equipment & Lab Supplies | Signal Labs",
+  description: "Laboratory consumables, glassware and instruments for peptide research. Pipettes, nitrile gloves, petri dishes, pH meters and more. UK-based, tracked dispatch.",
 };
 
 type SP = Record<string, string | string[] | undefined>;
@@ -100,7 +100,7 @@ export default async function ProductsPage({
   const products = await prisma.product.findMany({
     where: {
       ...(showInactive ? {} : { isActive: true }),
-      category: "peptide",
+      category: "equipment",
       ...(q
         ? {
             OR: [

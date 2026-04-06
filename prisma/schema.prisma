@@ -28,6 +28,9 @@ model Product {
   // ✅ NEW: weight per unit in grams (for automatic postage cost)
   weightGrams Int?
 
+  // ✅ Product category: "peptide" | "equipment"
+  category     String  @default("peptide")
+
   // ✅ Product variants (JSON array of {label, pricePennies})
   variantsJson String?
 

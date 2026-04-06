@@ -104,18 +104,18 @@ export default function Header() {
   // Central nav items (DESKTOP)
   // ✅ Added Blog here so you can see it on the main site
   const desktopNav = [
-    { href: "/products", label: "Products" },
-    { href: "/blog", label: "Blog" },
-    { href: "/research-use-policy", label: "Policy" },
+    { href: "/products", label: "Peptides" },
+    { href: "/equipment", label: "Lab Equipment" },
+    { href: "/blog", label: "Research" },
     { href: "/support", label: "Support" },
   ] as const;
 
   // Mobile dropdown items
   // ✅ Added Blog here too
   const mobileMenu = [
-    { href: "/products", label: "Products" },
-    { href: "/blog", label: "Blog" },
-    { href: "/research-use-policy", label: "Policy" },
+    { href: "/products", label: "Peptides" },
+    { href: "/equipment", label: "Lab Equipment" },
+    { href: "/blog", label: "Research" },
     { href: "/support", label: "Support" },
     { href: "/cart", label: "Cart" },
   ] as const;
