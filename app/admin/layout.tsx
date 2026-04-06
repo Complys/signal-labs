@@ -112,8 +112,6 @@ export default async function AdminLayout({ children }: { children: ReactNode })
   if (!session) redirect("/admin-login");
   const role = (session.user as any)?.role ?? "USER";
   if (role !== "ADMIN" && role !== "FULFILMENT") redirect("/");
-
-  const role = (session.user as any)?.role ?? "USER";
   const isFulfilment = role === "FULFILMENT";
   const isActive = (href: string) => pathname === href || pathname.startsWith(href + "/");
 
