@@ -4,7 +4,8 @@ generator client {
 
 datasource db {
   provider = "postgresql"
-  url      = env("DATABASE_URL")
+  url       = env("DATABASE_URL")
+  directUrl = env("DIRECT_URL")
 }
 
 // =========================
@@ -724,4 +725,18 @@ model PasswordResetToken {
   createdAt DateTime @default(now())
 
   @@index([token])
+}
+
+model DisclaimerAcceptance {
+  id           String   @id @default(cuid())
+  userId       String?
+  orgType      String?
+  declarations Json?
+  ipAddress    String?
+  userAgent    String?
+  path         String?
+  acceptedAt   DateTime @default(now())
+
+  @@index([userId])
+  @@index([acceptedAt])
 }
