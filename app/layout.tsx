@@ -8,6 +8,7 @@ import NewsletterSignup from "./_components/NewsletterSignup";
 import { Providers } from "./providers";
 import SiteChrome from "./_components/SiteChrome";
 import PageTracker from "./_components/PageTracker";
+import DisclaimerWall from "./_components/DisclaimerWall";
 import { Suspense } from "react";
 
 const geistSans = Geist({
@@ -102,7 +103,8 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
         />
         <Providers>
           <SiteChrome />
-          <Suspense fallback={null}><PageTracker /></Suspense>
+          <Suspense fallback={null}><PageTracker />
+        <DisclaimerWall /></Suspense>
           <main>{children}</main>
           <footer className="mt-20 border-t border-black/10 bg-white">
             <div className="mx-auto max-w-7xl px-6 py-12">
