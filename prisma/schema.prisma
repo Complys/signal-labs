@@ -740,3 +740,17 @@ model DisclaimerAcceptance {
   @@index([userId])
   @@index([acceptedAt])
 }
+
+model ResearchLead {
+  id         String   @id @default(cuid())
+  firstName  String?
+  lastName   String?
+  email      String   @unique
+  orgType    String?
+  ipAddress  String?
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @updatedAt
+
+  @@index([email])
+  @@index([createdAt])
+}
