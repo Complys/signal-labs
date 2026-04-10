@@ -88,13 +88,11 @@ async function getProfitSumsBetween(from: Date, to: Date) {
     select: {
       amountTotal: true,
       shippingChargedPennies: true,
+      cogsPennies: true,
+      postageCostPennies: true,
+      affiliateCommissionPennies: true,
       items: { select: { lineTotal: true } },
-
-      cogsPennies: true as any,
-      postageCostPennies: true as any,
-      affiliateCommissionPennies: true as any,
-      paymentFeePennies: true as any,
-    } as any,
+    },
   });
 
   let revenue = 0;
@@ -103,7 +101,7 @@ async function getProfitSumsBetween(from: Date, to: Date) {
   let affiliate = 0;
   let fees = 0;
 
-  for (const o of rows as any[]) {
+  for (const o of rows) {
     const amountTotal = safeInt(o.amountTotal);
     if (amountTotal > 0) {
       revenue += amountTotal;
@@ -117,7 +115,12 @@ async function getProfitSumsBetween(from: Date, to: Date) {
     cogs += safeInt(o.cogsPennies);
     postage += safeInt(o.postageCostPennies);
     affiliate += safeInt(o.affiliateCommissionPennies);
-    fees += safeInt(o.paymentFeePennies);
+    // Stripe fee: 1.4% + 20p for UK cards (approximation)
+    const orderRevenue = safeInt(o.amountTotal) > 0
+      ? safeInt(o.amountTotal)
+      : (Array.isArray(o.items) ? o.items.reduce((acc: number, it: any) => acc + safeInt(it.lineTotal), 0) : 0)
+        + safeInt(o.shippingChargedPennies);
+    fees += Math.round(orderRevenue * 0.014) + 20;
   }
 
   const grossProfit = revenue - cogs - postage;
